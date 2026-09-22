@@ -349,9 +349,12 @@ def debug_threads():
 
 @app.get("/health")
 def health() -> dict:
+    import sys, traceback
+    stacks = {th.name: "".join(traceback.format_stack(sys._current_frames()[th.ident]))
+              for th in threading.enumerate() if th.ident in sys._current_frames()}
     return {"ok": True, "worker_alive": bool(_WORKER and _WORKER.is_alive()),
             "queued": _jobs.qsize(), "llm": llm.provider_status(),
-            "ffmpeg": config.ffmpeg()}
+            "ffmpeg": config.ffmpeg(), "thread_stacks": stacks}
 
 
 @app.get("/settings/{key}")
