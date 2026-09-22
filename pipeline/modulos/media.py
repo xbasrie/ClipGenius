@@ -210,3 +210,75 @@ def file_hash(path: str | Path) -> str:
     with p.open("rb") as f:
         h.update(f.read(64 * 1024))
     return h.hexdigest()
+
+
+# ---------- youtube subtitle bypass ----------
+
+def parse_json3_subs(json3_path: str | Path) -> dict:
+    """Convert YouTube json3 subtitles to Whisper-compatible transcript format."""
+    with open(json3_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    events = data.get("events", [])
+    segments: list[dict] = []
+    full_text_parts: list[str] = []
+    for e in events:
+        start_ms = e.get("tStartMs", 0)
+        dur_ms = e.get("dDurationMs", 0)
+        segs = e.get("segs", [])
+        if not segs:
+            continue
+        seg_text = "".join(s.get("utf8", "") for s in segs).strip()
+        if not seg_text:
+            continue
+        start_s = round(start_ms / 1000.0, 3)
+        end_s = round((start_ms + dur_ms) / 1000.0, 3)
+        words = []
+        for s in segs:
+            w_text = s.get("utf8", "").strip()
+            if not w_text:
+                continue
+            offset_ms = s.get("tOffsetMs", 0)
+            w_start = round((start_ms + offset_ms) / 1000.0, 3)
+            w_end = min(end_s, round(w_start + 0.35, 3))
+            words.append({"word": w_text, "start": w_start, "end": w_end, "probability": 1.0})
+        segments.append({
+            "start": start_s,
+            "end": end_s,
+            "text": seg_text,
+            "words": words,
+        })
+        full_text_parts.append(seg_text)
+    return {
+        "text": " ".join(full_text_parts),
+        "language": "id",
+        "segments": segments,
+    }
+
+
+def fetch_youtube_transcript(url: str, output_dir: str | Path) -> dict | None:
+    """Download existing YouTube subtitles (json3) to bypass local STT."""
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sub_prefix = out_dir / "yt_subs"
+    cmd = [
+        *config.ytdlp(),
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github",
+        "--skip-download",
+        "--write-auto-sub",
+        "--write-sub",
+        "--sub-lang", "id-orig,id,en.*,id.*",
+        "--sub-format", "json3",
+        "-o", f"{sub_prefix}.%(ext)s",
+        url,
+    ]
+    try:
+        _run(cmd, timeout_s=45)
+        # Find any generated .json3 file
+        candidates = sorted(out_dir.glob("yt_subs.*.json3"), key=lambda p: p.stat().st_size, reverse=True)
+        if candidates:
+            logger.info("Found YouTube subtitle file: %s", candidates[0].name)
+            return parse_json3_subs(candidates[0])
+    except Exception as e:
+        logger.warning("Failed to fetch YouTube subtitles for %s: %s", url, e)
+    return None

@@ -159,16 +159,26 @@ def run_job(job_id: str) -> None:
         transcript = bookmark.get("transcript")
         if "transcribe" not in done or not transcript:
             _check_canceled()
-            _progress(job_id, "transcribe", 2, "Mentranskripsi audio")
-            def _stt_cb(pct: float, msg: str | None = None) -> None:
-                _check_canceled()
-                _progress(job_id, "transcribe", pct, msg or f"Transkripsi ({pct:.0f}%)")
+            src_url = opts.get("url")
+            if src_url:
+                _progress(job_id, "transcribe", 10, "Mengecek subtitle bawaan YouTube...")
+                transcript = media.fetch_youtube_transcript(src_url, work)
+                if transcript and transcript.get("segments"):
+                    logger.info("Pakai subtitle bawaan YouTube untuk %s (%d segments)",
+                                job_id, len(transcript["segments"]))
+                    _progress(job_id, "transcribe", 100,
+                              f"Menggunakan subtitle YouTube ({len(transcript['segments'])} baris)")
+            if not transcript:
+                _progress(job_id, "transcribe", 2, "Mentranskripsi audio dengan Whisper")
+                def _stt_cb(pct: float, msg: str | None = None) -> None:
+                    _check_canceled()
+                    _progress(job_id, "transcribe", pct, msg or f"Transkripsi ({pct:.0f}%)")
 
-            transcript = stt.transcribe(
-                video_path, model_tier=opts.get("model_tier", "fast"),
-                language=opts.get("language"),
-                progress_cb=_stt_cb,
-            )
+                transcript = stt.transcribe(
+                    video_path, model_tier=opts.get("model_tier", "fast"),
+                    language=opts.get("language"),
+                    progress_cb=_stt_cb,
+                )
             bookmark["transcript"] = transcript
             db.update_job(job_id, bookmark=bookmark)
             done.add("transcribe")
