@@ -26,12 +26,16 @@ def _pick_device() -> tuple[str, str]:
     """(device, compute_type): cuda when available, else cpu/int8."""
     try:
         import ctranslate2
-        devices = [d.name for d in ctranslate2.get_supported_compute_types("cuda")]
-        cuda_ok = bool(devices)
+        if ctranslate2.get_cuda_device_count() > 0:
+            supported = ctranslate2.get_supported_compute_types("cuda")
+            if "float16" in supported:
+                return "cuda", "float16"
+            if "int8" in supported:
+                return "cuda", "int8"
+            if supported:
+                return "cuda", next(iter(supported))
     except Exception:  # noqa: BLE001 — probing CUDA is best-effort
-        cuda_ok = False
-    if cuda_ok:
-        return "cuda", "float16"
+        pass
     return "cpu", "int8"
 
 

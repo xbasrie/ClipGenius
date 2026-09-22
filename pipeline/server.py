@@ -105,13 +105,18 @@ def _progress(job_id: str, stage: str, pct: float, msg: str = "") -> None:
 
 def run_job(job_id: str) -> None:
     job = db.get_job(job_id)
-    if not job:
+    if not job or job.get("state") in ("failed", "canceled", "completed"):
         return
     opts = job["options"]
     work = db.workdir_for(job_id)
     project = db.get_project(job["project_id"]) or {}
     bookmark = job["bookmark"]
     done = set(bookmark.get("stages_done", []))
+
+    def _check_canceled() -> None:
+        j = db.get_job(job_id)
+        if not j or j.get("state") == "failed":
+            raise RuntimeError("Job dibatalkan oleh pengguna")
 
     try:
         db.update_job(job_id, state="processing", error="")
@@ -127,15 +132,16 @@ def run_job(job_id: str) -> None:
                 meta = {}
             else:
                 _progress(job_id, "download", 5, "Membaca metadata video")
+                _check_canceled()
                 meta = media.get_video_info(src_url)
                 title = meta.get("title") or "video"
                 duration = float(meta.get("duration") or 0) or 0.0
                 _progress(job_id, "download", 15, f"Mengunduh: {title[:60]}")
-                video_path = media.download_video(
-                    src_url, work,
-                    progress_cb=lambda pct, speed, eta: _progress(
-                        job_id, "download", pct, f"Unduh {pct:.0f}% ({speed or '-'})"),
-                )
+                def _dl_cb(pct: float, speed: str, eta: float | None) -> None:
+                    _check_canceled()
+                    _progress(job_id, "download", pct, f"Unduh {pct:.0f}% ({speed or '-'})")
+
+                video_path = media.download_video(src_url, work, progress_cb=_dl_cb)
                 duration = duration or media.get_duration(video_path)
             db.execute(
                 "UPDATE projects SET title=?, duration_s=?, meta=? WHERE id=?",
@@ -152,11 +158,16 @@ def run_job(job_id: str) -> None:
         # ---- transcribe ----------------------------------------------------
         transcript = bookmark.get("transcript")
         if "transcribe" not in done or not transcript:
+            _check_canceled()
             _progress(job_id, "transcribe", 2, "Mentranskripsi audio")
+            def _stt_cb(pct: float, msg: str | None = None) -> None:
+                _check_canceled()
+                _progress(job_id, "transcribe", pct, msg or f"Transkripsi ({pct:.0f}%)")
+
             transcript = stt.transcribe(
                 video_path, model_tier=opts.get("model_tier", "fast"),
                 language=opts.get("language"),
-                progress_cb=lambda pct, msg=None: _progress(job_id, "transcribe", pct, msg or "Transkripsi"),
+                progress_cb=_stt_cb,
             )
             bookmark["transcript"] = transcript
             db.update_job(job_id, bookmark=bookmark)
@@ -317,6 +328,13 @@ def root():
             "presets": "/presets"
         }
     }
+
+
+@app.get("/debug/threads")
+def debug_threads():
+    import sys, traceback
+    return {str(th_id): "".join(traceback.format_stack(frame))
+            for th_id, frame in sys._current_frames().items()}
 
 
 @app.get("/health")
