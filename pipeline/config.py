@@ -12,6 +12,8 @@ APP_NAME = "ClipGenius"
 def _root() -> Path:
     if os.environ.get("CLIPGENIUS_HOME"):
         return Path(os.environ["CLIPGENIUS_HOME"])
+    if os.path.exists("D:\\"):
+        return Path("D:/clipgenius_data")
     base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")
     return Path(base) / APP_NAME
 
@@ -76,6 +78,29 @@ class LLMConfig:
     api_key: str = ""
     base_url: str = ""
     timeout_s: int = 180
+
+    @classmethod
+    def load(cls) -> "LLMConfig":
+        try:
+            from . import db
+            saved = db.get_setting("llm")
+            if isinstance(saved, dict) and saved.get("provider"):
+                prov = saved.get("provider", "offline")
+                defaults = {
+                    "gemini": ("gemini-2.0-flash", "https://generativelanguage.googleapis.com/v1beta"),
+                    "openai": ("gpt-4o-mini", "https://api.openai.com/v1"),
+                    "ollama": ("llama3.1", "http://127.0.0.1:11434/v1"),
+                }
+                mdl_def, url_def = defaults.get(prov, ("", ""))
+                return cls(
+                    provider=prov,
+                    model=saved.get("model") or mdl_def,
+                    api_key=saved.get("api_key") or "",
+                    base_url=saved.get("base_url") or url_def,
+                )
+        except Exception:
+            pass
+        return cls.from_env()
 
     @staticmethod
     def from_env() -> "LLMConfig":

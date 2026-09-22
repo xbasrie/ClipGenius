@@ -219,7 +219,10 @@
               <p class="text-xs text-slate-500" id="progress-message">Mengunduh video sumber</p>
             </div>
           </div>
-          <span class="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full" id="progress-percent">0%</span>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full" id="progress-percent">0%</span>
+            <button type="button" onclick="cancelActiveJob()" class="text-xs font-semibold px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full hover:bg-rose-100 transition-colors">Batalkan</button>
+          </div>
         </div>
         <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div id="progress-bar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
@@ -294,6 +297,30 @@
     const API_BASE = window.location.origin;
     const AUTH_HEADER = { 'X-ClipGenius-Token': 'dev-local-token' };
     let pollInterval = null;
+    let currentJobId = null;
+
+    async function cancelActiveJob() {
+      if (!currentJobId) return;
+      if (!confirm('Apakah Anda yakin ingin membatalkan job ini?')) return;
+      try {
+        await fetch(`${API_BASE}/jobs/${currentJobId}/cancel`, { method: 'POST', headers: AUTH_HEADER });
+        const banner = document.getElementById('active-job-banner');
+        banner.innerHTML = `
+          <div class="flex items-center justify-between text-slate-700">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold">✕</div>
+              <div>
+                <h4 class="font-bold text-sm">Job Dibatalkan</h4>
+                <p class="text-xs text-slate-500">Proses telah dihentikan.</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('active-job-banner').classList.add('hidden')" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold">Tutup</button>
+          </div>`;
+        if (pollInterval) clearInterval(pollInterval);
+      } catch (err) {
+        alert('Gagal membatalkan: ' + err.message);
+      }
+    }
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -376,6 +403,7 @@
     }
 
     function pollJob(jobId) {
+      currentJobId = jobId;
       if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(async () => {
         try {
@@ -521,12 +549,16 @@
 
     async function loadSettings() {
       try {
-        const res = await fetch(API_BASE + '/health');
+        const res = await fetch(API_BASE + '/settings/llm', { headers: AUTH_HEADER });
         const data = await res.json();
-        if (data.llm) {
-          document.getElementById('set-provider').value = data.llm.provider || 'offline';
-          document.getElementById('set-model').value = data.llm.model || '';
-          document.getElementById('set-url').value = data.llm.base_url || '';
+        const val = data.value || {};
+        if (val.provider) {
+          document.getElementById('set-provider').value = val.provider;
+          document.getElementById('set-model').value = val.model || '';
+          document.getElementById('set-url').value = val.base_url || '';
+          if (val.api_key) {
+            document.getElementById('set-key').value = val.api_key;
+          }
           toggleProviderInputs();
         }
       } catch (e) { console.error(e); }

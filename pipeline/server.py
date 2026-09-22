@@ -166,7 +166,7 @@ def run_job(job_id: str) -> None:
         plan = bookmark.get("plan")
         if "curate" not in done or not plan:
             _progress(job_id, "curate", 10, "AI memilih momen terbaik")
-            cfg = config.LLMConfig.from_env()
+            cfg = config.LLMConfig.load()
             if opts.get("llm_provider"):
                 cfg = config.LLMConfig(
                     provider=opts["llm_provider"],
@@ -494,8 +494,7 @@ def cancel_job(job_id: str) -> dict:
     job = db.get_job(job_id)
     if not job:
         raise HTTPException(404, "Job tidak ditemukan")
-    if job["state"] == "processing":
-        db.update_job(job_id, state="paused", message="Dijeda oleh pengguna")
+    db.update_job(job_id, state="failed", error="Dibatalkan oleh pengguna", message="Dibatalkan")
     return {"ok": True}
 
 

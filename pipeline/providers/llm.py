@@ -107,7 +107,7 @@ def _call_openai_compatible(prompt: str, cfg: config.LLMConfig) -> str:
 
 def generate_json(prompt: str, cfg: config.LLMConfig | None = None) -> dict:
     """Raises LLMError when no provider is usable — callers fall back to heuristics."""
-    cfg = cfg or config.LLMConfig.from_env()
+    cfg = cfg or config.LLMConfig.load()
     if cfg.provider == "gemini":
         return _extract_json(_call_gemini(prompt, cfg))
     if cfg.provider in ("openai", "ollama"):
@@ -116,14 +116,14 @@ def generate_json(prompt: str, cfg: config.LLMConfig | None = None) -> dict:
 
 
 def available(cfg: config.LLMConfig | None = None) -> bool:
-    cfg = cfg or config.LLMConfig.from_env()
+    cfg = cfg or config.LLMConfig.load()
     if cfg.provider == "ollama":
         return True
     return bool(cfg.api_key) and cfg.provider in ("gemini", "openai")
 
 
 def provider_status() -> dict[str, Any]:
-    cfg = config.LLMConfig.from_env()
+    cfg = config.LLMConfig.load()
     return {
         "provider": cfg.provider,
         "model": cfg.model,
