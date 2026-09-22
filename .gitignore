@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+fixtures/smoke_out/
+*.log
+desktop/node_modules/
+desktop/dist/
+.DS_Store
+Thumbs.db
