@@ -11,7 +11,7 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-start "ClipGenius Sidecar" /min .venv\Scripts\python.exe -m uvicorn pipeline.server:app --host 127.0.0.1 --port %CLIPGENIUS_PORT%
+start "ClipGenius Sidecar" /min .venv\Scripts\python.exe -m uvicorn pipeline.server:app --host 127.0.0.1 --port %CLIPGENIUS_PORT% --reload
 
 echo [ClipGenius] Sidecar listening on http://127.0.0.1:%CLIPGENIUS_PORT%
 echo [ClipGenius] Token: %CLIPGENIUS_TOKEN%
