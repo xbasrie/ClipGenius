@@ -39,6 +39,9 @@ def download_video(url: str, output_dir: Path,
     outtmpl = str(output_dir / "source.%(ext)s")
     cmd = [
         *config.ytdlp(),
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github",
+        "--extractor-args", "youtube:player_client=android,web",
         "--format", "bv*[ext=mp4][height<=1080]+ba[ext=m4a]/b[ext=mp4]/b",
         "--merge-output-format", "mp4",
         "--recode-video", "mp4",
@@ -107,7 +110,13 @@ def _parse_eta(s: str) -> float | None:
 
 def get_video_info(url: str) -> dict:
     """title, duration, thumbnail_url, channel via yt-dlp --dump-json."""
-    cmd = [*config.ytdlp(), "--dump-json", "--no-playlist", "--skip-download", url]
+    cmd = [
+        *config.ytdlp(),
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github",
+        "--extractor-args", "youtube:player_client=android,web",
+        "--dump-json", "--no-playlist", "--skip-download", url
+    ]
     raw = _run(cmd, timeout_s=120)
     line = raw.strip().splitlines()[0]
     try:
