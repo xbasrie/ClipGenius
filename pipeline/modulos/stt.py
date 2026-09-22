@@ -23,10 +23,12 @@ def _model_name(tier: str) -> str:
 
 
 def _pick_device() -> tuple[str, str]:
-    """(device, compute_type): cuda when available, else cpu/int8."""
+    """(device, compute_type): cuda when available and libraries loadable, else cpu/int8."""
     try:
         import ctranslate2
         if ctranslate2.get_cuda_device_count() > 0:
+            import ctypes
+            ctypes.CDLL("cublas64_12.dll")
             supported = ctranslate2.get_supported_compute_types("cuda")
             if "float16" in supported:
                 return "cuda", "float16"
@@ -66,13 +68,27 @@ def transcribe(video_path: str | Path, model_tier: str = "fast",
 
     device, compute_type = _pick_device()
     logger.info("STT: model=%s device=%s compute=%s", model_ref, device, compute_type)
-    segments_iter, info = WhisperModel(model_ref, device=device, compute_type=compute_type
-                                       ).transcribe(
-        str(vp),
-        language=language,
-        word_timestamps=True,
-        vad_filter=True,
-    )
+    try:
+        segments_iter, info = WhisperModel(model_ref, device=device, compute_type=compute_type
+                                           ).transcribe(
+            str(vp),
+            language=language,
+            word_timestamps=True,
+            vad_filter=True,
+        )
+    except Exception as e:
+        if device != "cpu":
+            logger.warning("STT on %s failed (%s); falling back to CPU int8", device, e)
+            device, compute_type = "cpu", "int8"
+            segments_iter, info = WhisperModel(model_ref, device=device, compute_type=compute_type
+                                               ).transcribe(
+                str(vp),
+                language=language,
+                word_timestamps=True,
+                vad_filter=True,
+            )
+        else:
+            raise
 
     total = float(getattr(info, "duration", 0.0)) or 0.0
     out_segments: list[dict] = []
