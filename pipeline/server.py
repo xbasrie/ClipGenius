@@ -43,8 +43,13 @@ STAGES = ["download", "transcribe", "curate", "clip", "subtitle", "review"]
 
 # --------------------------------------------------------------------------- auth
 
-def require_token(x_clipgenius_token: str = Header(default="")) -> None:
-    if TOKEN and x_clipgenius_token != TOKEN:
+def require_token(request: Request, x_clipgenius_token: str = Header(default="")) -> None:
+    if not TOKEN:
+        return
+    # Public routes for browser / health check / docs
+    if request.url.path in ("/", "/health", "/docs", "/openapi.json", "/favicon.ico"):
+        return
+    if x_clipgenius_token != TOKEN:
         raise HTTPException(status_code=401, detail="Invalid or missing sidecar token")
 
 
@@ -296,6 +301,23 @@ def _shutdown() -> None:
 
 
 # --------------------------------------------------------------------------- endpoints
+
+@app.get("/")
+def root():
+    index_path = Path(__file__).resolve().parent / "static" / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    return {
+        "app": "ClipGenius Sidecar API",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "docs": "/docs",
+            "jobs": "/jobs",
+            "presets": "/presets"
+        }
+    }
+
 
 @app.get("/health")
 def health() -> dict:
