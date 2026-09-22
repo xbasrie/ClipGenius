@@ -381,6 +381,9 @@ def resume_job(job_id: str) -> dict:
 def delete_job(job_id: str) -> dict:
     db.delete_clips(job_id)
     db.execute("DELETE FROM jobs WHERE id=?", (job_id,))
+    work = config.WORK_DIR / job_id
+    if work.exists():
+        shutil.rmtree(work, ignore_errors=True)
     return {"ok": True}
 
 

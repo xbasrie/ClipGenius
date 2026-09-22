@@ -493,6 +493,9 @@
                       <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Semua Klip
                     </button>
                   ` : ''}
+                  <button onclick="deleteJob('${j.id}')" class="px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors" title="Hapus Proyek">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                  </button>
                 </div>
               </div>
 
@@ -537,6 +540,16 @@
         alert(`Sukses! ${data.exported} klip berhasil diekspor ke: ${outDir}`);
       } catch (err) {
         alert('Gagal export: ' + err.message);
+      }
+    }
+
+    async function deleteJob(jobId) {
+      if (!confirm(`Hapus proyek ${jobId} beserta seluruh filenya?`)) return;
+      try {
+        await fetch(`${API_BASE}/jobs/${jobId}`, { method: 'DELETE', headers: AUTH_HEADER });
+        loadJobs();
+      } catch (err) {
+        alert('Gagal menghapus: ' + err.message);
       }
     }
 
