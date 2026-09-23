@@ -46,83 +46,124 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased bg-[#0B0F19] text-slate-100">
-  <!-- Top Navbar -->
-  <header class="bg-[#0F1626]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm font-bold text-lg">
+<body class="h-screen w-screen overflow-hidden flex flex-col antialiased bg-[#090D16] text-slate-100 select-none">
+  <!-- Desktop Titlebar / Window Header -->
+  <header class="h-10 bg-[#0B0F19] border-b border-slate-800/80 px-3 flex items-center justify-between shrink-0 z-30 select-none">
+    <!-- Left: App Branding & Menubar -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center text-white font-extrabold text-xs shadow-xs">
           CG
         </div>
-        <div>
-          <h1 class="font-bold text-white text-lg leading-tight font-extrabold tracking-tight">ClipGenius</h1>
-          <p class="text-xs text-slate-400 font-medium">AI Video Repurposing • Local-First Desktop Studio</p>
-        </div>
+        <span class="font-bold text-white text-xs tracking-tight">ClipGenius Studio</span>
+        <span class="text-[10px] text-slate-500 font-mono">v1.0</span>
       </div>
-      <div class="flex items-center gap-4">
-        <div id="sidecar-status" class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/80">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Sidecar Connected (Port 8089)
-        </div>
-        <button onclick="switchTab('settings')" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors" title="Pengaturan">
-          <i data-lucide="settings" class="w-5 h-5"></i>
-        </button>
+      <!-- Desktop Menu Items -->
+      <div class="hidden sm:flex items-center gap-1 text-[11px] text-slate-400 pl-3 border-l border-slate-800">
+        <button type="button" onclick="switchTab('create')" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition-colors">Berkas</button>
+        <button type="button" onclick="switchTab('editor')" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition-colors">Editor</button>
+        <button type="button" onclick="switchTab('jobs')" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition-colors">Antrean</button>
+        <button type="button" onclick="switchTab('settings')" class="px-2 py-0.5 rounded hover:bg-slate-800 hover:text-white transition-colors">Konfigurasi</button>
       </div>
+    </div>
+
+    <!-- Center: Active Workspace / Project Indicator -->
+    <div class="hidden md:flex items-center gap-2 text-[11px] text-slate-400 bg-[#070A12] border border-slate-800/80 px-3 py-0.5 rounded-md font-mono">
+      <i data-lucide="folder-git-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+      <span class="text-slate-300 font-medium truncate max-w-[280px]">D:\clipgenius_data</span>
+    </div>
+
+    <!-- Right: Status Badge & Tools -->
+    <div class="flex items-center gap-2">
+      <div id="sidecar-status" class="flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/80 font-mono">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        Sidecar :8089
+      </div>
+      <button onclick="switchTab('settings')" class="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors" title="Pengaturan">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+      </button>
     </div>
   </header>
 
-  <!-- Main Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Modern Segmented Navigation Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111726]/80 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2 mb-8 shadow-xl">
-      <nav class="flex flex-wrap items-center gap-1.5" aria-label="Tabs">
-        <button onclick="switchTab('create')" id="tab-create" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm">
-          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Buat Klip Baru
-        </button>
-        <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
-          <i data-lucide="video" class="w-4 h-4 text-indigo-400"></i> Studio Editor Pro
-        </button>
-        <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
-          <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i> Riwayat & Hasil
-        </button>
-        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
-          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> Konfigurasi AI
-        </button>
-      </nav>
-      <div class="flex items-center gap-2 pr-2 text-xs text-slate-400">
-        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="font-medium text-[11px] text-slate-300">FastAPI Sidecar Ready</span>
-      </div>
-    </div>
+  <!-- Desktop App Body (Split Layout: Sidebar + Canvas) -->
+  <div class="flex-1 flex overflow-hidden min-h-0">
+    <!-- Left Activity Bar / Sidebar -->
+    <aside class="w-56 bg-[#0B0F19] border-r border-slate-800/80 flex flex-col justify-between p-2.5 shrink-0 select-none">
+      <div class="space-y-4">
+        <!-- Workspaces -->
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-2.5 mb-1.5">Workspace</div>
+          <nav class="space-y-1" aria-label="Tabs">
+            <button onclick="switchTab('create')" id="tab-create" class="tab-btn flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 transition-all w-full text-left shadow-xs">
+              <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Buat Klip Baru
+            </button>
+            <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all w-full text-left">
+              <i data-lucide="video" class="w-4 h-4 text-indigo-400"></i> Studio Editor Pro
+            </button>
+            <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all w-full text-left">
+              <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i> Riwayat & Hasil
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all w-full text-left">
+              <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> Konfigurasi AI
+            </button>
+          </nav>
+        </div>
 
-    <!-- VIEW 1: CREATE / INPUT -->
-    <div id="view-create" class="space-y-6 max-w-5xl mx-auto">
-      <!-- Hero Header & Quick Feature Badges -->
-      <div class="text-center py-4 space-y-3">
-        <h2 class="text-3xl font-extrabold text-white tracking-tight">Ubah Video Panjang Jadi Klip Viral</h2>
-        <p class="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
-          Kliping otomatis dengan kurasi AI, transkrip kata-per-kata Whisper, dan layout vertikal 9:16 siap posting ke Shorts, Reels, atau TikTok.
-        </p>
-        <div class="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs">
-          <span class="px-3 py-1 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/80 font-medium flex items-center gap-1.5">
-            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Transkripsi Offline Whisper
-          </span>
-          <span class="px-3 py-1 rounded-full bg-indigo-950/70 text-indigo-400 border border-indigo-800/80 font-medium flex items-center gap-1.5">
-            <i data-lucide="brain" class="w-3.5 h-3.5"></i> Kurasi Semantik AI
-          </span>
-          <span class="px-3 py-1 rounded-full bg-amber-950/70 text-amber-400 border border-amber-800/80 font-medium flex items-center gap-1.5">
-            <i data-lucide="subtitles" class="w-3.5 h-3.5"></i> Subtitle Per-Kata Dinamis
-          </span>
+        <!-- Desktop Quick System Specs -->
+        <div class="border-t border-slate-800/80 pt-3 px-1 space-y-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-1.5">Spesifikasi Engine</div>
+          <div class="bg-[#070A12] border border-slate-800/70 rounded-lg p-2.5 space-y-1.5 text-[11px]">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>STT Engine:</span>
+              <span class="text-slate-200 font-mono font-semibold">Whisper</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Aspect:</span>
+              <span class="text-slate-200 font-mono font-semibold">9:16 Vertikal</span>
+            </div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Smart Face:</span>
+              <span class="text-emerald-400 font-mono font-semibold">Aktif</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Main Input & Settings Card -->
-      <div class="bg-[#111726] rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6">
-        <form id="job-form" onsubmit="handleCreateJob(event)" class="space-y-6">
-          <!-- Source Mode Toggle (URL vs Local File) -->
+      <!-- Sidebar Footer (Storage Location) -->
+      <div class="border-t border-slate-800/80 pt-2.5">
+        <div class="p-2 rounded-lg bg-[#070A12] border border-slate-800/80 text-[10px] text-slate-400 space-y-1">
+          <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
+            <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i> Ruang Kerja
+          </div>
+          <div class="font-mono text-slate-400 break-all select-all text-[10px]">D:\clipgenius_data</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Container (Independent Scroll) -->
+    <main class="flex-1 h-full min-h-0 overflow-y-auto bg-[#070A12] p-4 lg:p-6">
+      <!-- VIEW 1: CREATE / INPUT -->
+      <div id="view-create" class="space-y-4 max-w-5xl mx-auto">
+        <!-- Desktop Workspace Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Sumber Video</label>
-            <div class="flex items-center gap-2 p-1.5 bg-[#0B0F19] rounded-xl border border-slate-800 w-fit mb-4">
+            <h2 class="text-sm font-bold text-white tracking-tight flex items-center gap-2 uppercase">
+              <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Buat Klip Baru (Pipeline Input)
+            </h2>
+            <p class="text-xs text-slate-400">Import sumber media dan konfigurasikan parameter rendering vertikal 9:16.</p>
+          </div>
+          <div class="hidden sm:flex items-center gap-2 text-[11px] text-slate-400 font-mono">
+            <span class="px-2 py-0.5 rounded bg-[#0B0F19] border border-slate-800 text-slate-300">FastAPI Sidecar Ready</span>
+          </div>
+        </div>
+
+        <!-- Main Input & Settings Card -->
+        <div class="bg-[#0B0F19] rounded-xl border border-slate-800/80 p-5 shadow-lg space-y-5">
+          <form id="job-form" onsubmit="handleCreateJob(event)" class="space-y-5">
+            <!-- Source Mode Toggle (URL vs Local File) -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Sumber Video</label>
+              <div class="flex items-center gap-2 p-1 bg-[#070A12] rounded-lg border border-slate-800 w-fit mb-3">
               <button type="button" onclick="setSourceType('url')" id="src-tab-url" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-2">
                 <i data-lucide="youtube" class="w-4 h-4 text-emerald-400"></i> Link Online (YouTube / TikTok)
               </button>
@@ -650,6 +691,24 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- Desktop Bottom Status Bar -->
+<footer class="h-6 bg-[#0B0F19] border-t border-slate-800/80 px-3 flex items-center justify-between text-[11px] text-slate-400 font-mono select-none shrink-0 z-30">
+  <div class="flex items-center gap-3">
+    <span class="flex items-center gap-1.5 text-emerald-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      <span id="status-bar-text" class="text-slate-300">Siap</span>
+    </span>
+    <span class="text-slate-700">|</span>
+    <span id="status-workspace" class="text-slate-400">Import & Pipeline</span>
+  </div>
+  <div class="flex items-center gap-3">
+    <span class="text-slate-500">Storage: D:\clipgenius_data</span>
+    <span class="text-slate-700">|</span>
+    <span class="text-slate-400">Port :8089</span>
+  </div>
+</footer>
 
   <script>
     const API_BASE = window.location.origin;
@@ -1312,11 +1371,11 @@
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.className = "tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent";
+        btn.className = "tab-btn flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all w-full text-left";
       });
       const activeBtn = document.getElementById('tab-' + tab);
       if (activeBtn) {
-        activeBtn.className = "tab-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm";
+        activeBtn.className = "tab-btn flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 transition-all w-full text-left shadow-xs";
       }
 
       document.getElementById('view-create').classList.toggle('hidden', tab !== 'create');
@@ -1329,6 +1388,12 @@
       if (tab === 'editor') {
         populateStudioProjects();
         lucide.createIcons();
+      }
+
+      const statusWorkspace = document.getElementById('status-workspace');
+      if (statusWorkspace) {
+        const names = { create: 'Import & Pipeline', editor: 'Studio Editor Pro', jobs: 'Riwayat & Klip', settings: 'Konfigurasi AI' };
+        statusWorkspace.textContent = names[tab] || tab;
       }
     }
 
@@ -1434,6 +1499,11 @@
           msg.textContent = job.message || job.stage || 'Sedang berjalan...';
           pct.textContent = `${job.progress || 0}%`;
           bar.style.width = `${job.progress || 0}%`;
+
+          const sbText = document.getElementById('status-bar-text');
+          if (sbText) {
+            sbText.textContent = job.state === 'completed' ? 'Selesai' : (job.state === 'failed' ? 'Gagal' : `Memproses (${job.progress || 0}%) - ${job.stage || ''}`);
+          }
 
           const eta = calculateETA(jobId, job.progress || 0, job.state === 'completed' || job.state === 'failed');
           if (eta && job.state === 'processing') {
