@@ -510,10 +510,12 @@
       }, 2000);
     }
 
-    async function loadJobs() {
+    async function loadJobs(silent = false) {
       const c = document.getElementById('jobs-container');
-      c.innerHTML = '<div class="text-center py-12 text-slate-400 text-sm"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto mb-2"></i>Memuat riwayat proyek...</div>';
-      lucide.createIcons();
+      if (!silent) {
+        c.innerHTML = '<div class="text-center py-12 text-slate-400 text-sm"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto mb-2"></i>Memuat riwayat proyek...</div>';
+        lucide.createIcons();
+      }
 
       try {
         const res = await fetch(API_BASE + '/jobs', { headers: AUTH_HEADER });
@@ -695,6 +697,28 @@
     // Init
     checkHealth();
     lucide.createIcons();
+
+    // Auto-detect active running job on load
+    (async function initActiveJob() {
+      try {
+        const res = await fetch(API_BASE + '/jobs', { headers: AUTH_HEADER });
+        const { jobs } = await res.json();
+        const active = (jobs || []).find(j => j.state === 'processing' || j.state === 'queued' || j.state === 'paused');
+        if (active) {
+          pollJob(active.id);
+        }
+      } catch (e) {
+        console.error('Failed to init active job:', e);
+      }
+    })();
+
+    // Background auto-refresh for history tab if open
+    setInterval(() => {
+      const jobsView = document.getElementById('view-jobs');
+      if (jobsView && !jobsView.classList.contains('hidden')) {
+        loadJobs(true); // silent refresh
+      }
+    }, 2500);
   </script>
 </body>
 </html>
