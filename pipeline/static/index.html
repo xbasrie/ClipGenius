@@ -220,6 +220,7 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
+            <span id="progress-eta" class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full hidden">ETA: -</span>
             <span class="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full" id="progress-percent">0%</span>
             <button type="button" id="btn-pause-resume" onclick="togglePauseResumeActiveJob()" class="text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors">Jeda</button>
             <button type="button" onclick="cancelActiveJob()" class="text-xs font-semibold px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full hover:bg-rose-100 transition-colors">Batalkan</button>
@@ -300,6 +301,41 @@
     let pollInterval = null;
     let currentJobId = null;
     let currentJobState = null;
+    let jobProgressHistory = {};
+
+    function formatETA(seconds) {
+      if (!seconds || seconds <= 0 || !isFinite(seconds)) return null;
+      if (seconds < 60) return `~${Math.round(seconds)}d lagi`;
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.round(seconds % 60);
+      return `~${mins}m ${secs}d lagi`;
+    }
+
+    function calculateETA(jobId, progress, isDone) {
+      if (isDone || progress >= 100 || progress <= 0) {
+        delete jobProgressHistory[jobId];
+        return null;
+      }
+      const now = Date.now();
+      let hist = jobProgressHistory[jobId];
+      if (!hist) {
+        jobProgressHistory[jobId] = { startTs: now, lastTs: now, lastProg: progress };
+        return null;
+      }
+      // Calculate rate based on overall elapsed time
+      const elapsedSec = (now - hist.startTs) / 1000;
+      if (elapsedSec < 3 || progress <= hist.lastProg) return hist.lastETA || null;
+
+      const ratePerSec = progress / elapsedSec; // % per second
+      if (ratePerSec <= 0) return null;
+
+      const remainingSec = (100 - progress) / ratePerSec;
+      const etaStr = formatETA(remainingSec);
+      hist.lastETA = etaStr;
+      hist.lastTs = now;
+      hist.lastProg = progress;
+      return etaStr;
+    }
 
     async function togglePauseResumeActiveJob() {
       if (!currentJobId) return;
@@ -458,6 +494,7 @@
           const title = document.getElementById('progress-title');
           const msg = document.getElementById('progress-message');
           const pct = document.getElementById('progress-percent');
+          const etaBadge = document.getElementById('progress-eta');
           const bar = document.getElementById('progress-bar');
           const pauseBtn = document.getElementById('btn-pause-resume');
 
@@ -466,6 +503,14 @@
           msg.textContent = job.message || job.stage || 'Sedang berjalan...';
           pct.textContent = `${job.progress || 0}%`;
           bar.style.width = `${job.progress || 0}%`;
+
+          const eta = calculateETA(jobId, job.progress || 0, job.state === 'completed' || job.state === 'failed');
+          if (eta && job.state === 'processing') {
+            etaBadge.textContent = 'ETA: ' + eta;
+            etaBadge.classList.remove('hidden');
+          } else {
+            etaBadge.classList.add('hidden');
+          }
 
           if (pauseBtn) {
             if (job.state === 'paused') {
@@ -587,7 +632,10 @@
                 <div class="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-100">
                   <div class="flex items-center justify-between text-xs">
                     <span class="text-slate-600 font-medium">${j.message || j.stage || 'Memproses...'}</span>
-                    <span class="font-bold text-slate-800">${j.progress || 0}%</span>
+                    <div class="flex items-center gap-2">
+                      ${calculateETA(j.id, j.progress || 0, false) ? `<span class="text-[11px] text-slate-500 font-medium bg-slate-200/60 px-2 py-0.5 rounded">ETA: ${calculateETA(j.id, j.progress || 0, false)}</span>` : ''}
+                      <span class="font-bold text-slate-800">${j.progress || 0}%</span>
+                    </div>
                   </div>
                   <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                     <div class="bg-emerald-600 h-2 rounded-full transition-all duration-300" style="width: ${j.progress || 0}%"></div>
