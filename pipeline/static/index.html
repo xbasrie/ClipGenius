@@ -221,6 +221,7 @@
           </div>
           <div class="flex items-center gap-2">
             <span class="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full" id="progress-percent">0%</span>
+            <button type="button" id="btn-pause-resume" onclick="togglePauseResumeActiveJob()" class="text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors">Jeda</button>
             <button type="button" onclick="cancelActiveJob()" class="text-xs font-semibold px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full hover:bg-rose-100 transition-colors">Batalkan</button>
           </div>
         </div>
@@ -298,6 +299,48 @@
     const AUTH_HEADER = { 'X-ClipGenius-Token': 'dev-local-token' };
     let pollInterval = null;
     let currentJobId = null;
+    let currentJobState = null;
+
+    async function togglePauseResumeActiveJob() {
+      if (!currentJobId) return;
+      try {
+        if (currentJobState === 'paused') {
+          await fetch(`${API_BASE}/jobs/${currentJobId}/resume`, { method: 'POST', headers: AUTH_HEADER });
+        } else {
+          await fetch(`${API_BASE}/jobs/${currentJobId}/pause`, { method: 'POST', headers: AUTH_HEADER });
+        }
+      } catch (err) {
+        alert('Gagal mengubah status: ' + err.message);
+      }
+    }
+
+    async function pauseJob(jobId) {
+      try {
+        await fetch(`${API_BASE}/jobs/${jobId}/pause`, { method: 'POST', headers: AUTH_HEADER });
+        loadJobs();
+      } catch (err) {
+        alert('Gagal menjeda: ' + err.message);
+      }
+    }
+
+    async function resumeJob(jobId) {
+      try {
+        await fetch(`${API_BASE}/jobs/${jobId}/resume`, { method: 'POST', headers: AUTH_HEADER });
+        loadJobs();
+      } catch (err) {
+        alert('Gagal melanjutkan: ' + err.message);
+      }
+    }
+
+    async function cancelJob(jobId) {
+      if (!confirm(`Batalkan proses untuk job ${jobId}?`)) return;
+      try {
+        await fetch(`${API_BASE}/jobs/${jobId}/cancel`, { method: 'POST', headers: AUTH_HEADER });
+        loadJobs();
+      } catch (err) {
+        alert('Gagal membatalkan: ' + err.message);
+      }
+    }
 
     async function cancelActiveJob() {
       if (!currentJobId) return;
@@ -409,18 +452,30 @@
         try {
           const res = await fetch(`${API_BASE}/jobs/${jobId}`, { headers: AUTH_HEADER });
           const { job, project } = await res.json();
+          currentJobState = job.state;
 
           const banner = document.getElementById('active-job-banner');
           const title = document.getElementById('progress-title');
           const msg = document.getElementById('progress-message');
           const pct = document.getElementById('progress-percent');
           const bar = document.getElementById('progress-bar');
+          const pauseBtn = document.getElementById('btn-pause-resume');
 
           banner.classList.remove('hidden');
           title.textContent = project.title || 'Memproses Video...';
           msg.textContent = job.message || job.stage || 'Sedang berjalan...';
           pct.textContent = `${job.progress || 0}%`;
           bar.style.width = `${job.progress || 0}%`;
+
+          if (pauseBtn) {
+            if (job.state === 'paused') {
+              pauseBtn.textContent = 'Lanjutkan';
+              pauseBtn.className = 'text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full hover:bg-emerald-100 transition-colors';
+            } else {
+              pauseBtn.textContent = 'Jeda';
+              pauseBtn.className = 'text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors';
+            }
+          }
 
           if (job.state === 'completed') {
             clearInterval(pollInterval);
@@ -475,7 +530,12 @@
           const { clips } = await clipsRes.json();
 
           const badgeColor = j.state === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                             j.state === 'failed' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+                             j.state === 'failed' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                             j.state === 'paused' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+
+          const isRunning = j.state === 'processing' || j.state === 'queued';
+          const isPaused = j.state === 'paused';
+          const isFailed = j.state === 'failed';
 
           html += `
             <div class="bg-white border border-slate-200 rounded-xl p-6 card-shadow space-y-4">
@@ -488,6 +548,27 @@
                   <p class="text-xs text-slate-500 mt-1">${j.message || ''} • Dibuat: ${new Date(j.created_at * 1000).toLocaleString('id-ID')}</p>
                 </div>
                 <div class="flex items-center gap-2">
+                  ${isRunning ? `
+                    <button onclick="pauseJob('${j.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                      <i data-lucide="pause" class="w-3.5 h-3.5"></i> Jeda
+                    </button>
+                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                      <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Batalkan
+                    </button>
+                  ` : ''}
+                  ${isPaused ? `
+                    <button onclick="resumeJob('${j.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                      <i data-lucide="play" class="w-3.5 h-3.5"></i> Lanjutkan
+                    </button>
+                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                      <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Batalkan
+                    </button>
+                  ` : ''}
+                  ${isFailed ? `
+                    <button onclick="resumeJob('${j.id}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors" title="Ulangi Job">
+                      <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Ulangi
+                    </button>
+                  ` : ''}
                   ${j.state === 'completed' ? `
                     <button onclick="triggerExport('${j.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
                       <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Semua Klip
@@ -498,6 +579,19 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Progress bar in History Card -->
+              ${(isRunning || isPaused) ? `
+                <div class="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <div class="flex items-center justify-between text-xs">
+                    <span class="text-slate-600 font-medium">${j.message || j.stage || 'Memproses...'}</span>
+                    <span class="font-bold text-slate-800">${j.progress || 0}%</span>
+                  </div>
+                  <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-emerald-600 h-2 rounded-full transition-all duration-300" style="width: ${j.progress || 0}%"></div>
+                  </div>
+                </div>
+              ` : ''}
 
               <!-- Clips Grid -->
               ${clips && clips.length > 0 ? `

@@ -115,8 +115,12 @@ def run_job(job_id: str) -> None:
 
     def _check_canceled() -> None:
         j = db.get_job(job_id)
-        if not j or j.get("state") == "failed":
+        if not j:
+            raise RuntimeError("Job tidak ditemukan")
+        if j.get("state") == "failed":
             raise RuntimeError("Job dibatalkan oleh pengguna")
+        if j.get("state") == "paused":
+            raise RuntimeError("Job dijeda oleh pengguna")
 
     try:
         db.update_job(job_id, state="processing", error="")
@@ -269,6 +273,10 @@ def run_job(job_id: str) -> None:
         logger.info("job %s completed with %d clips", job_id, len(clips_meta))
 
     except Exception as e:  # noqa: BLE001 — job boundary: record and move on
+        current = db.get_job(job_id)
+        if current and current.get("state") == "paused":
+            logger.info("job %s paused cleanly", job_id)
+            return
         logger.exception("job %s failed", job_id)
         db.update_job(job_id, state="failed", error=str(e), message=f"Gagal: {e}")
 
@@ -521,6 +529,16 @@ def export_job(job_id: str, payload: ExportRequest) -> dict:
     )
     ok = [r for r in results if r["file"]]
     return {"exported": len(ok), "failed": len(results) - len(ok), "results": results}
+
+
+@app.post("/jobs/{job_id}/pause")
+def pause_job(job_id: str) -> dict:
+    job = db.get_job(job_id)
+    if not job:
+        raise HTTPException(404, "Job tidak ditemukan")
+    if job["state"] in ("processing", "queued"):
+        db.update_job(job_id, state="paused", message="Dijeda oleh pengguna")
+    return {"ok": True}
 
 
 @app.post("/jobs/{job_id}/cancel")
