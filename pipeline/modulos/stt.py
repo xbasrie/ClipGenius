@@ -25,6 +25,21 @@ def _model_name(tier: str) -> str:
 def _pick_device() -> tuple[str, str]:
     """(device, compute_type): cuda when available and libraries loadable, else cpu/int8."""
     try:
+        import os, sys
+        base_dir = Path(__file__).resolve().parent.parent.parent
+        candidates = [
+            base_dir / ".venv" / "Lib" / "site-packages" / "nvidia" / "cublas" / "bin",
+            Path(sys.prefix) / "Lib" / "site-packages" / "nvidia" / "cublas" / "bin",
+        ]
+        for p in candidates:
+            if p.is_dir():
+                if hasattr(os, "add_dll_directory"):
+                    try:
+                        os.add_dll_directory(str(p))
+                    except Exception:
+                        pass
+                os.environ["PATH"] = str(p) + os.pathsep + os.environ.get("PATH", "")
+
         import ctranslate2
         if ctranslate2.get_cuda_device_count() > 0:
             import ctypes
