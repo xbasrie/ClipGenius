@@ -256,9 +256,9 @@
       </div>
 
       <!-- Studio Work Area (3 Columns: Assets, Canvas, Subtitle Styler) -->
-      <div class="grid grid-cols-12 gap-4 h-[560px]">
+      <div class="grid grid-cols-12 gap-4 items-start">
         <!-- Left: Asset & Transcript List -->
-        <div class="col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-full text-slate-300">
+        <div class="col-span-12 lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[520px] text-slate-300">
           <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
             <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transkrip Subtitle</span>
             <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400" id="editor-word-count">0 kata</span>
@@ -269,14 +269,14 @@
         </div>
 
         <!-- Center: 9:16 Video Player Canvas -->
-        <div class="col-span-5 bg-black border border-slate-800 rounded-xl flex flex-col items-center justify-center relative overflow-hidden group">
-          <div class="h-full aspect-[9/16] bg-slate-950 flex items-center justify-center relative shadow-2xl">
-            <video id="editor-video-player" class="w-full h-full object-cover" controls playsinline>
+        <div class="col-span-12 lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center h-[520px]">
+          <div class="h-full max-h-[490px] w-auto aspect-[9/16] bg-black rounded-lg overflow-hidden relative shadow-2xl flex items-center justify-center border border-slate-800">
+            <video id="editor-video-player" class="w-full h-full object-contain" controls playsinline>
               <source id="editor-video-source" src="" type="video/mp4">
             </video>
             <!-- Live Subtitle Overlay Preview -->
-            <div id="editor-sub-overlay" class="absolute bottom-16 inset-x-4 text-center pointer-events-none transition-all duration-150">
-              <span id="editor-sub-text" class="px-3 py-1.5 rounded font-black tracking-tight leading-tight uppercase drop-shadow-md bg-black/60 text-yellow-300 text-base border border-yellow-300/40">
+            <div id="editor-sub-overlay" class="absolute bottom-16 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20">
+              <span id="editor-sub-text" class="px-2.5 py-1 rounded font-black tracking-tight leading-tight uppercase drop-shadow-md text-yellow-300 text-sm">
                 PRATINJAU SUBTITLE
               </span>
             </div>
@@ -284,16 +284,16 @@
         </div>
 
         <!-- Right: Subtitle & Typography Styler -->
-        <div class="col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-full text-slate-200 overflow-y-auto space-y-4">
+        <div class="col-span-12 lg:col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[520px] text-slate-200 overflow-y-auto space-y-4">
           <div class="pb-3 border-b border-slate-800">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Penata Subtitle & Tipografi</h3>
-            <p class="text-[11px] text-slate-500">Sesuaikan tampilan font, warna, dan posisi teks bergaya CapCut.</p>
+            <p class="text-[11px] text-slate-500">Sesuaikan font, warna teks, background opsional, dan posisi.</p>
           </div>
 
           <!-- Font Family -->
           <div class="space-y-1.5">
             <label class="text-[11px] font-semibold text-slate-400 uppercase">Jenis Font</label>
-            <select id="sub-font-family" onchange="updateLiveSubtitlePreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            <select id="sub-font-family" onchange="updateLiveSubtitlePreview()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
               <option value="'Montserrat', sans-serif">Montserrat (Creator Populer)</option>
               <option value="'Impact', sans-serif">Impact / Bold Hook</option>
               <option value="'Inter', sans-serif">Inter (Clean Modern)</option>
@@ -301,8 +301,8 @@
             </select>
           </div>
 
-          <!-- Colors -->
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Colors & Background Toggle -->
+          <div class="space-y-3">
             <div class="space-y-1.5">
               <label class="text-[11px] font-semibold text-slate-400 uppercase">Warna Teks</label>
               <div class="flex items-center gap-2">
@@ -310,11 +310,17 @@
                 <span class="text-xs text-slate-300 uppercase font-mono" id="sub-color-text-val">#FACC15</span>
               </div>
             </div>
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-semibold text-slate-400 uppercase">Warna Background</label>
-              <div class="flex items-center gap-2">
+
+            <!-- Background Optional Checkbox -->
+            <div class="space-y-2 pt-1 border-t border-slate-800">
+              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300 font-semibold">
+                <input type="checkbox" id="sub-bg-enable" onchange="updateLiveSubtitlePreview()" class="w-4 h-4 text-emerald-600 rounded bg-slate-950 border-slate-700 accent-emerald-500">
+                <span>Gunakan Warna Background Teks (Opsional)</span>
+              </label>
+
+              <div id="sub-bg-color-picker" class="flex items-center gap-2 pl-6 opacity-40 pointer-events-none transition-opacity">
                 <input type="color" id="sub-color-bg" value="#000000" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
-                <span class="text-xs text-slate-300 uppercase font-mono" id="sub-color-bg-val">#000000</span>
+                <span class="text-xs text-slate-400 uppercase font-mono" id="sub-color-bg-val">#000000</span>
               </div>
             </div>
           </div>
@@ -323,9 +329,9 @@
           <div class="space-y-1.5">
             <div class="flex justify-between text-[11px] text-slate-400">
               <span class="font-semibold uppercase">Ukuran Font</span>
-              <span id="sub-font-size-val" class="font-mono text-emerald-400">18px</span>
+              <span id="sub-font-size-val" class="font-mono text-emerald-400">16px</span>
             </div>
-            <input type="range" id="sub-font-size" min="12" max="32" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500">
+            <input type="range" id="sub-font-size" min="12" max="32" value="16" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500">
           </div>
 
           <!-- Position Slider (Vertical) -->
@@ -340,7 +346,7 @@
           <!-- Hook Title Input -->
           <div class="space-y-1.5 pt-2 border-t border-slate-800">
             <label class="text-[11px] font-semibold text-slate-400 uppercase">Teks Hook Atas</label>
-            <input type="text" id="editor-hook-input" placeholder="Misal: RAHASIA MENARIK..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            <input type="text" id="editor-hook-input" placeholder="Misal: RAHASIA MENARIK..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
           </div>
         </div>
       </div>
@@ -681,6 +687,7 @@
     function updateLiveSubtitlePreview() {
       const font = document.getElementById('sub-font-family').value;
       const colorText = document.getElementById('sub-color-text').value;
+      const enableBg = document.getElementById('sub-bg-enable').checked;
       const colorBg = document.getElementById('sub-color-bg').value;
       const size = document.getElementById('sub-font-size').value;
       const posY = document.getElementById('sub-pos-y').value;
@@ -690,15 +697,32 @@
       document.getElementById('sub-font-size-val').innerText = `${size}px`;
       document.getElementById('sub-pos-y-val').innerText = `${posY}%`;
 
+      // Toggle background picker opacity
+      const bgPickerContainer = document.getElementById('sub-bg-color-picker');
+      if (enableBg) {
+        bgPickerContainer.classList.remove('opacity-40', 'pointer-events-none');
+      } else {
+        bgPickerContainer.classList.add('opacity-40', 'pointer-events-none');
+      }
+
       const overlay = document.getElementById('editor-sub-overlay');
       const textSpan = document.getElementById('editor-sub-text');
 
       overlay.style.bottom = `${posY}%`;
       textSpan.style.fontFamily = font;
       textSpan.style.color = colorText;
-      textSpan.style.backgroundColor = colorBg + 'cc';
       textSpan.style.fontSize = `${size}px`;
-      textSpan.style.borderColor = colorText + '66';
+      textSpan.style.textShadow = '0 2px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)';
+
+      if (enableBg) {
+        textSpan.style.backgroundColor = colorBg + 'cc';
+        textSpan.style.padding = '4px 10px';
+        textSpan.style.border = `1px solid ${colorText}55`;
+      } else {
+        textSpan.style.backgroundColor = 'transparent';
+        textSpan.style.padding = '0';
+        textSpan.style.border = 'none';
+      }
     }
 
     async function saveClipEdits() {
@@ -707,7 +731,8 @@
       const stylePayload = {
         font: document.getElementById('sub-font-family').value,
         color: document.getElementById('sub-color-text').value,
-        bg: document.getElementById('sub-color-bg').value,
+        enable_bg: document.getElementById('sub-bg-enable').checked,
+        bg: document.getElementById('sub-bg-enable').checked ? document.getElementById('sub-color-bg').value : null,
         size: document.getElementById('sub-font-size').value,
         pos_y: document.getElementById('sub-pos-y').value
       };
