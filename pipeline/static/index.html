@@ -238,18 +238,28 @@
 
     <!-- VIEW 1.5: STUDIO EDITOR (CAPCUT / PREMIERE PRO STYLE) -->
     <div id="view-editor" class="hidden space-y-4">
-      <div class="flex items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-xl shadow-lg border border-slate-800">
+      <!-- Editor Header & Project Selector -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-xl shadow-lg border border-slate-800 gap-3">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
             <i data-lucide="video" class="w-4 h-4"></i>
           </div>
           <div>
             <h2 class="text-sm font-bold tracking-wide uppercase text-slate-200">ClipGenius Studio Editor Pro</h2>
-            <p class="text-xs text-slate-400" id="editor-clip-label">Pilih klip dari riwayat proyek untuk memulai pengeditan visual.</p>
+            <p class="text-xs text-slate-400" id="editor-clip-label">Pilih proyek dan klip di bawah untuk mulai mengedit.</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="saveClipEdits()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all">
+
+        <div class="flex items-center gap-3">
+          <!-- Project Dropdown Selector -->
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400 font-semibold whitespace-nowrap">Proyek:</label>
+            <select id="editor-project-select" onchange="onStudioProjectChange(this.value)" class="bg-slate-950 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs focus:ring-2 focus:ring-emerald-500 outline-none max-w-[200px] truncate">
+              <option value="">Pilih Proyek...</option>
+            </select>
+          </div>
+
+          <button onclick="saveClipEdits()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
             <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Penyesuaian
           </button>
         </div>
@@ -377,6 +387,21 @@
           </div>
           <!-- Seek bar -->
           <input type="range" id="timeline-scrubber" min="0" max="100" value="0" step="0.1" class="w-full relative z-10 accent-emerald-400 cursor-pointer opacity-80 hover:opacity-100">
+        </div>
+      </div>
+
+      <!-- Bottom Panel: Project Clips Filmstrip Selector -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="film" class="w-4 h-4 text-emerald-400"></i>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Daftar Klip Dari Proyek Terpilih</span>
+          </div>
+          <span id="editor-clips-count" class="text-[11px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded">0 klip</span>
+        </div>
+
+        <div id="editor-clips-strip" class="flex items-center gap-3 overflow-x-auto pb-2 pt-1">
+          <div class="text-slate-500 text-xs py-4 w-full text-center">Pilih proyek di atas untuk menampilkan daftar klip.</div>
         </div>
       </div>
     </div>
@@ -601,17 +626,105 @@
     // Studio Editor Logic
     let activeEditingClip = null;
     let editingTranscriptWords = [];
+    let studioSelectedJobId = null;
+
+    async function populateStudioProjects() {
+      try {
+        const res = await fetch(`${API_BASE}/jobs?limit=50`, { headers: AUTH_HEADER });
+        const data = await res.json();
+        const select = document.getElementById('editor-project-select');
+        const prevVal = select.value;
+        select.innerHTML = '<option value="">Pilih Proyek...</option>';
+
+        (data.jobs || []).forEach(j => {
+          const opt = document.createElement('option');
+          opt.value = j.id;
+          opt.text = `${j.id} (${j.state.toUpperCase()})`;
+          if (j.id === prevVal || j.id === studioSelectedJobId) {
+            opt.selected = true;
+          }
+          select.appendChild(opt);
+        });
+
+        if (studioSelectedJobId) {
+          select.value = studioSelectedJobId;
+        } else if (data.jobs && data.jobs.length && !select.value) {
+          const firstWithClips = data.jobs.find(j => j.state === 'completed') || data.jobs[0];
+          select.value = firstWithClips.id;
+          onStudioProjectChange(firstWithClips.id);
+        }
+      } catch (err) {
+        console.error('Gagal memuat dropdown proyek studio:', err);
+      }
+    }
+
+    async function onStudioProjectChange(jobId) {
+      studioSelectedJobId = jobId;
+      if (!jobId) {
+        document.getElementById('editor-clips-strip').innerHTML = '<div class="text-slate-500 text-xs py-4 w-full text-center">Pilih proyek di atas untuk menampilkan daftar klip.</div>';
+        document.getElementById('editor-clips-count').innerText = '0 klip';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/jobs/${jobId}/clips`, { headers: AUTH_HEADER });
+        const data = await res.json();
+        const clips = data.clips || [];
+        document.getElementById('editor-clips-count').innerText = `${clips.length} klip`;
+
+        const strip = document.getElementById('editor-clips-strip');
+        if (!clips.length) {
+          strip.innerHTML = '<div class="text-slate-500 text-xs py-4 w-full text-center italic">Belum ada klip yang selesai pada proyek ini.</div>';
+          return;
+        }
+
+        strip.innerHTML = '';
+        clips.forEach((clip, idx) => {
+          const dur = (clip.end_s - clip.start_s).toFixed(0);
+          const isSelected = activeEditingClip && activeEditingClip.id === clip.id;
+          const card = document.createElement('div');
+          card.className = `flex-shrink-0 w-44 bg-slate-950 border ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-lg p-2.5 cursor-pointer transition-all space-y-1.5`;
+          card.onclick = () => openClipInStudio(jobId, clip.id);
+          card.innerHTML = `
+            <div class="aspect-[9/16] max-h-24 bg-black rounded overflow-hidden flex items-center justify-center relative pointer-events-none">
+              <video src="${API_BASE}/media/${jobId}/${clip.file.split(/[\\/]/).pop()}?token=dev-local-token" class="w-full h-full object-cover"></video>
+              <div class="absolute bottom-1 right-1 bg-black/70 px-1.5 py-0.5 rounded text-[10px] text-white font-mono">${dur}s</div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] pt-0.5">
+              <span class="font-bold text-white truncate">Klip #${idx + 1}</span>
+              <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-semibold border border-emerald-800">★ ${Math.round(clip.score)}</span>
+            </div>
+            <p class="text-[10px] text-slate-400 truncate italic">"${clip.hook || 'Tanpa hook'}"</p>
+          `;
+          strip.appendChild(card);
+        });
+
+        // Jika belum ada klip yang aktif, pilih klip pertama
+        if (!activeEditingClip || !clips.some(c => c.id === activeEditingClip.id)) {
+          openClipInStudio(jobId, clips[0].id);
+        }
+      } catch (err) {
+        console.error('Gagal memuat daftar klip filmstrip:', err);
+      }
+    }
 
     async function openClipInStudio(jobId, clipId) {
       try {
         switchTab('editor');
+        studioSelectedJobId = jobId;
+        const projSelect = document.getElementById('editor-project-select');
+        if (projSelect) projSelect.value = jobId;
+
         const res = await fetch(`${API_BASE}/jobs/${jobId}/clips`, { headers: AUTH_HEADER });
         const data = await res.json();
         const clip = data.clips.find(c => c.id === clipId);
         if (!clip) return;
         activeEditingClip = clip;
 
-        document.getElementById('editor-clip-label').innerText = `${clip.title || 'Klip #' + clip.clip_index} • Durasi: ${(clip.end_s - clip.start_s).toFixed(1)}s`;
+        // Refresh filmstrip highlight
+        onStudioProjectChange(jobId);
+
+        document.getElementById('editor-clip-label').innerText = `${clip.title || 'Klip #' + (clip.clip_index || 1)} • Durasi: ${(clip.end_s - clip.start_s).toFixed(1)}s`;
         document.getElementById('editor-hook-input').value = clip.hook || '';
 
         // Video Player setup
@@ -842,6 +955,7 @@
       if (tab === 'jobs') loadJobs();
       if (tab === 'settings') loadSettings();
       if (tab === 'editor') {
+        populateStudioProjects();
         lucide.createIcons();
       }
     }
