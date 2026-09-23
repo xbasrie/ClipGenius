@@ -1388,7 +1388,6 @@
           lucide.createIcons();
         }
 
-      try {
         const res = await fetch(API_BASE + '/jobs', {
           method: 'POST',
           headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
