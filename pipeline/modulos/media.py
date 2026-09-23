@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 import subprocess
 from pathlib import Path
 from typing import Callable
 
 from .. import config
+
+logger = logging.getLogger(__name__)
 
 
 class MediaError(RuntimeError):
