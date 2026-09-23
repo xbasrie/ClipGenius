@@ -96,8 +96,9 @@ def export_clip(
 
     cmd = [ffmpeg(), "-y", "-loglevel", "error", "-i", str(tmp_cut),
            "-vf", ",".join(filters),
-           "-c:v", "libx264", "-preset", "fast", "-crf", "20",
-           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+           "-b:v", "10M", "-maxrate", "14M", "-bufsize", "20M",
+           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "256k",
            "-movflags", "+faststart", str(output_path)]
     r = subprocess.run(cmd, capture_output=True, text=True)
     tmp_cut.unlink(missing_ok=True)

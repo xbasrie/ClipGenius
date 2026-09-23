@@ -56,6 +56,9 @@
         <button onclick="switchTab('create')" id="tab-create" class="tab-btn border-b-2 border-emerald-600 text-emerald-700 py-3 px-1 text-sm font-semibold flex items-center gap-2">
           <i data-lucide="sparkles" class="w-4 h-4"></i> Buat Klip Baru
         </button>
+        <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 text-sm font-semibold flex items-center gap-2">
+          <i data-lucide="video" class="w-4 h-4"></i> Studio Editor (CapCut Style)
+        </button>
         <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 text-sm font-semibold flex items-center gap-2">
           <i data-lucide="layers" class="w-4 h-4"></i> Riwayat Proyek & Klip
         </button>
@@ -222,12 +225,152 @@
           <div class="flex items-center gap-2">
             <span id="progress-eta" class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full hidden">ETA: -</span>
             <span class="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full" id="progress-percent">0%</span>
+            <button type="button" id="btn-select-topics" onclick="openTopicSelectionModal()" class="text-xs font-semibold px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full hover:bg-indigo-100 transition-colors hidden">Pilih Topik (Siap)</button>
             <button type="button" id="btn-pause-resume" onclick="togglePauseResumeActiveJob()" class="text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors">Jeda</button>
             <button type="button" onclick="cancelActiveJob()" class="text-xs font-semibold px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full hover:bg-rose-100 transition-colors">Batalkan</button>
           </div>
         </div>
         <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
           <div id="progress-bar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1.5: STUDIO EDITOR (CAPCUT / PREMIERE PRO STYLE) -->
+    <div id="view-editor" class="hidden space-y-4">
+      <div class="flex items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-xl shadow-lg border border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+            <i data-lucide="video" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold tracking-wide uppercase text-slate-200">ClipGenius Studio Editor Pro</h2>
+            <p class="text-xs text-slate-400" id="editor-clip-label">Pilih klip dari riwayat proyek untuk memulai pengeditan visual.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="saveClipEdits()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Penyesuaian
+          </button>
+        </div>
+      </div>
+
+      <!-- Studio Work Area (3 Columns: Assets, Canvas, Subtitle Styler) -->
+      <div class="grid grid-cols-12 gap-4 h-[560px]">
+        <!-- Left: Asset & Transcript List -->
+        <div class="col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-full text-slate-300">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Transkrip Subtitle</span>
+            <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400" id="editor-word-count">0 kata</span>
+          </div>
+          <div id="editor-transcript-list" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+            <div class="text-slate-500 text-center py-10">Buka salah satu klip di tab Riwayat untuk mengedit subtitle.</div>
+          </div>
+        </div>
+
+        <!-- Center: 9:16 Video Player Canvas -->
+        <div class="col-span-5 bg-black border border-slate-800 rounded-xl flex flex-col items-center justify-center relative overflow-hidden group">
+          <div class="h-full aspect-[9/16] bg-slate-950 flex items-center justify-center relative shadow-2xl">
+            <video id="editor-video-player" class="w-full h-full object-cover" controls playsinline>
+              <source id="editor-video-source" src="" type="video/mp4">
+            </video>
+            <!-- Live Subtitle Overlay Preview -->
+            <div id="editor-sub-overlay" class="absolute bottom-16 inset-x-4 text-center pointer-events-none transition-all duration-150">
+              <span id="editor-sub-text" class="px-3 py-1.5 rounded font-black tracking-tight leading-tight uppercase drop-shadow-md bg-black/60 text-yellow-300 text-base border border-yellow-300/40">
+                PRATINJAU SUBTITLE
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Subtitle & Typography Styler -->
+        <div class="col-span-4 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-full text-slate-200 overflow-y-auto space-y-4">
+          <div class="pb-3 border-b border-slate-800">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Penata Subtitle & Tipografi</h3>
+            <p class="text-[11px] text-slate-500">Sesuaikan tampilan font, warna, dan posisi teks bergaya CapCut.</p>
+          </div>
+
+          <!-- Font Family -->
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-semibold text-slate-400 uppercase">Jenis Font</label>
+            <select id="sub-font-family" onchange="updateLiveSubtitlePreview()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="'Montserrat', sans-serif">Montserrat (Creator Populer)</option>
+              <option value="'Impact', sans-serif">Impact / Bold Hook</option>
+              <option value="'Inter', sans-serif">Inter (Clean Modern)</option>
+              <option value="'Comic Sans MS', cursive">Komika / Playful</option>
+            </select>
+          </div>
+
+          <!-- Colors -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Warna Teks</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="sub-color-text" value="#facc15" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+                <span class="text-xs text-slate-300 uppercase font-mono" id="sub-color-text-val">#FACC15</span>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Warna Background</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="sub-color-bg" value="#000000" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+                <span class="text-xs text-slate-300 uppercase font-mono" id="sub-color-bg-val">#000000</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Font Size Slider -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span class="font-semibold uppercase">Ukuran Font</span>
+              <span id="sub-font-size-val" class="font-mono text-emerald-400">18px</span>
+            </div>
+            <input type="range" id="sub-font-size" min="12" max="32" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500">
+          </div>
+
+          <!-- Position Slider (Vertical) -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span class="font-semibold uppercase">Posisi Vertikal (Y)</span>
+              <span id="sub-pos-y-val" class="font-mono text-emerald-400">18% (Bawah)</span>
+            </div>
+            <input type="range" id="sub-pos-y" min="5" max="85" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500">
+          </div>
+
+          <!-- Hook Title Input -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-800">
+            <label class="text-[11px] font-semibold text-slate-400 uppercase">Teks Hook Atas</label>
+            <input type="text" id="editor-hook-input" placeholder="Misal: RAHASIA MENARIK..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: CapCut-Style Timeline Track Ruler -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-slate-300 space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span class="font-bold flex items-center gap-1.5 uppercase tracking-wider"><i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i> Timeline Multi-Track Audio/Video</span>
+          <span id="timeline-timecode" class="font-mono text-emerald-400 text-xs font-bold">00:00.00 / 00:00.00</span>
+        </div>
+        <div class="relative w-full h-12 bg-slate-950 rounded-lg border border-slate-800 flex items-center px-2 overflow-hidden">
+          <!-- Waveform track representation -->
+          <div class="absolute inset-x-2 inset-y-1.5 flex items-center gap-0.5 opacity-40">
+            <div class="h-6 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-8 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-10 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-4 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-9 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-7 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-10 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-5 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-8 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-10 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-3 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-7 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-10 w-1 bg-emerald-500 rounded-full"></div>
+            <div class="h-6 w-1 bg-emerald-500 rounded-full"></div>
+          </div>
+          <!-- Seek bar -->
+          <input type="range" id="timeline-scrubber" min="0" max="100" value="0" step="0.1" class="w-full relative z-10 accent-emerald-400 cursor-pointer opacity-80 hover:opacity-100">
         </div>
       </div>
     </div>
@@ -246,6 +389,38 @@
 
       <div id="jobs-container" class="space-y-6">
         <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- TOPIC SELECTION MODAL -->
+    <div id="modal-topic-selection" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <i data-lucide="check-square" class="w-5 h-5 text-emerald-600"></i> Pilih Topik Video Yang Akan Diclip
+            </h3>
+            <p class="text-xs text-slate-500">AI telah menganalisis video dan menemukan kandidat hook/momen terbaik. Centang topik yang ingin dipotong.</p>
+          </div>
+          <button onclick="closeTopicModal()" class="text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Topic Cards Container -->
+        <div id="modal-topics-list" class="max-h-[360px] overflow-y-auto space-y-3 pr-1">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+          <span id="modal-selected-count" class="text-xs font-semibold text-slate-600">0 topik terpilih</span>
+          <div class="flex items-center gap-2">
+            <button onclick="closeTopicModal()" class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-semibold">Tutup</button>
+            <button onclick="confirmSelectedTopics()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5">
+              <i data-lucide="scissors" class="w-4 h-4"></i> Mulai Potong Klip Terpilih
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -337,6 +512,230 @@
       return etaStr;
     }
 
+    let activeModalJobId = null;
+    let availablePlanShorts = [];
+
+    async function openTopicSelectionModal(jobId = null) {
+      const targetId = jobId || currentJobId;
+      if (!targetId) return;
+      activeModalJobId = targetId;
+      try {
+        const res = await fetch(`${API_BASE}/jobs/${targetId}`, { headers: AUTH_HEADER });
+        const data = await res.json();
+        const job = data.job;
+        const plan = job.bookmark ? job.bookmark.plan : null;
+        if (!plan || !plan.shorts || !plan.shorts.length) {
+          alert('Topik belum selesai dianalisis AI.');
+          return;
+        }
+        availablePlanShorts = plan.shorts;
+        const list = document.getElementById('modal-topics-list');
+        list.innerHTML = '';
+        availablePlanShorts.forEach((s, idx) => {
+          const itemIdx = idx + 1;
+          const dur = Math.round(s.end - s.start);
+          const div = document.createElement('label');
+          div.className = "flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 cursor-pointer transition-all";
+          div.innerHTML = `
+            <input type="checkbox" name="topic-select" value="${itemIdx}" checked onchange="updateSelectedTopicCount()" class="mt-1 accent-emerald-600 w-4 h-4">
+            <div class="flex-1 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">${s.title || ('Topik #' + itemIdx)}</span>
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Skor Viral: ${s.score || 85}</span>
+              </div>
+              <p class="text-xs text-slate-600 font-medium">"${s.hook || ''}"</p>
+              <div class="flex items-center gap-3 text-[11px] text-slate-400">
+                <span>⏱ Durasi: ~${dur} detik</span>
+                <span>📍 Detik ${Math.round(s.start)} - ${Math.round(s.end)}</span>
+              </div>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+        updateSelectedTopicCount();
+        document.getElementById('modal-topic-selection').classList.remove('hidden');
+        lucide.createIcons();
+      } catch (err) {
+        alert('Gagal memuat topik: ' + err.message);
+      }
+    }
+
+    function closeTopicModal() {
+      document.getElementById('modal-topic-selection').classList.add('hidden');
+    }
+
+    function updateSelectedTopicCount() {
+      const checked = document.querySelectorAll('input[name="topic-select"]:checked');
+      document.getElementById('modal-selected-count').innerText = `${checked.length} dari ${availablePlanShorts.length} topik terpilih`;
+    }
+
+    async function confirmSelectedTopics() {
+      if (!activeModalJobId) return;
+      const checked = Array.from(document.querySelectorAll('input[name="topic-select"]:checked')).map(el => parseInt(el.value));
+      if (!checked.length) {
+        alert('Pilih minimal 1 topik untuk dipotong!');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/jobs/${activeModalJobId}/select-topics`, {
+          method: 'POST',
+          headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selected_indices: checked })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          closeTopicModal();
+          pollJob(activeModalJobId);
+        }
+      } catch (err) {
+        alert('Gagal melanjutkan klip: ' + err.message);
+      }
+    }
+
+    // Studio Editor Logic
+    let activeEditingClip = null;
+    let editingTranscriptWords = [];
+
+    async function openClipInStudio(jobId, clipId) {
+      try {
+        switchTab('editor');
+        const res = await fetch(`${API_BASE}/jobs/${jobId}/clips`, { headers: AUTH_HEADER });
+        const data = await res.json();
+        const clip = data.clips.find(c => c.id === clipId);
+        if (!clip) return;
+        activeEditingClip = clip;
+
+        document.getElementById('editor-clip-label').innerText = `${clip.title || 'Klip #' + clip.clip_index} • Durasi: ${(clip.end_s - clip.start_s).toFixed(1)}s`;
+        document.getElementById('editor-hook-input').value = clip.hook || '';
+
+        // Video Player setup
+        const video = document.getElementById('editor-video-player');
+        const source = document.getElementById('editor-video-source');
+        source.src = `${API_BASE}/media/${jobId}/clip_${clip.clip_index}.mp4`;
+        video.load();
+
+        // Subtitle & Transkrip setup
+        const transcript = clip.transcript || [];
+        editingTranscriptWords = transcript;
+        renderStudioTranscript(transcript);
+
+        // Timeline timecode listener
+        video.ontimeupdate = () => {
+          const cur = video.currentTime;
+          const dur = video.duration || (clip.end_s - clip.start_s) || 1;
+          document.getElementById('timeline-timecode').innerText = `${formatSeconds(cur)} / ${formatSeconds(dur)}`;
+          document.getElementById('timeline-scrubber').value = (cur / dur) * 100;
+
+          // Find active subtitle text
+          if (editingTranscriptWords && editingTranscriptWords.length) {
+            const relCur = clip.start_s + cur;
+            const activeWord = editingTranscriptWords.find(w => relCur >= w.start && relCur <= w.end);
+            if (activeWord) {
+              document.getElementById('editor-sub-text').innerText = activeWord.text.toUpperCase();
+            }
+          }
+        };
+
+        document.getElementById('timeline-scrubber').oninput = (e) => {
+          const pct = parseFloat(e.target.value);
+          const dur = video.duration || (clip.end_s - clip.start_s) || 1;
+          video.currentTime = (pct / 100) * dur;
+        };
+
+        updateLiveSubtitlePreview();
+      } catch (err) {
+        alert('Gagal membuka editor: ' + err.message);
+      }
+    }
+
+    function renderStudioTranscript(words) {
+      const container = document.getElementById('editor-transcript-list');
+      container.innerHTML = '';
+      document.getElementById('editor-word-count').innerText = `${words.length} kata`;
+
+      if (!words || !words.length) {
+        container.innerHTML = '<div class="text-slate-500 text-center py-10">Tidak ada data kata subtitle.</div>';
+        return;
+      }
+
+      words.forEach((w, idx) => {
+        const item = document.createElement('div');
+        item.className = "p-2 rounded bg-slate-800 border border-slate-700 flex items-center justify-between gap-2";
+        item.innerHTML = `
+          <input type="text" value="${w.text}" onchange="updateTranscriptWord(${idx}, this.value)"
+            class="bg-transparent border-b border-transparent focus:border-emerald-400 text-xs text-white font-medium outline-none flex-1">
+          <span class="text-[10px] text-slate-500 font-mono">${w.start.toFixed(1)}s</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateTranscriptWord(index, newText) {
+      if (editingTranscriptWords[index]) {
+        editingTranscriptWords[index].text = newText;
+        document.getElementById('editor-sub-text').innerText = newText.toUpperCase();
+      }
+    }
+
+    function updateLiveSubtitlePreview() {
+      const font = document.getElementById('sub-font-family').value;
+      const colorText = document.getElementById('sub-color-text').value;
+      const colorBg = document.getElementById('sub-color-bg').value;
+      const size = document.getElementById('sub-font-size').value;
+      const posY = document.getElementById('sub-pos-y').value;
+
+      document.getElementById('sub-color-text-val').innerText = colorText.toUpperCase();
+      document.getElementById('sub-color-bg-val').innerText = colorBg.toUpperCase();
+      document.getElementById('sub-font-size-val').innerText = `${size}px`;
+      document.getElementById('sub-pos-y-val').innerText = `${posY}%`;
+
+      const overlay = document.getElementById('editor-sub-overlay');
+      const textSpan = document.getElementById('editor-sub-text');
+
+      overlay.style.bottom = `${posY}%`;
+      textSpan.style.fontFamily = font;
+      textSpan.style.color = colorText;
+      textSpan.style.backgroundColor = colorBg + 'cc';
+      textSpan.style.fontSize = `${size}px`;
+      textSpan.style.borderColor = colorText + '66';
+    }
+
+    async function saveClipEdits() {
+      if (!activeEditingClip) return;
+      const newHook = document.getElementById('editor-hook-input').value.trim();
+      const stylePayload = {
+        font: document.getElementById('sub-font-family').value,
+        color: document.getElementById('sub-color-text').value,
+        bg: document.getElementById('sub-color-bg').value,
+        size: document.getElementById('sub-font-size').value,
+        pos_y: document.getElementById('sub-pos-y').value
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/clips/${activeEditingClip.id}`, {
+          method: 'PATCH',
+          headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            hook: newHook,
+            subtitle_style: stylePayload
+          })
+        });
+        const d = await res.json();
+        if (d.ok) {
+          alert('Penyesuaian klip dan subtitle berhasil disimpan!');
+        }
+      } catch (err) {
+        alert('Gagal menyimpan penyesuaian: ' + err.message);
+      }
+    }
+
+    function formatSeconds(s) {
+      if (isNaN(s)) return "00:00";
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
     async function togglePauseResumeActiveJob() {
       if (!currentJobId) return;
       try {
@@ -410,11 +809,15 @@
       document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-slate-500');
 
       document.getElementById('view-create').classList.toggle('hidden', tab !== 'create');
+      document.getElementById('view-editor').classList.toggle('hidden', tab !== 'editor');
       document.getElementById('view-jobs').classList.toggle('hidden', tab !== 'jobs');
       document.getElementById('view-settings').classList.toggle('hidden', tab !== 'settings');
 
       if (tab === 'jobs') loadJobs();
       if (tab === 'settings') loadSettings();
+      if (tab === 'editor') {
+        lucide.createIcons();
+      }
     }
 
     async function checkHealth() {
@@ -512,6 +915,19 @@
             etaBadge.classList.add('hidden');
           }
 
+          const selectTopicsBtn = document.getElementById('btn-select-topics');
+          if (selectTopicsBtn) {
+            if (job.state === 'awaiting_selection') {
+              selectTopicsBtn.classList.remove('hidden');
+              // Otomatis buka modal jika belum terbuka
+              if (document.getElementById('modal-topic-selection').classList.contains('hidden')) {
+                openTopicSelectionModal(jobId);
+              }
+            } else {
+              selectTopicsBtn.classList.add('hidden');
+            }
+          }
+
           if (pauseBtn) {
             if (job.state === 'paused') {
               pauseBtn.textContent = 'Lanjutkan';
@@ -595,6 +1011,14 @@
                   <p class="text-xs text-slate-500 mt-1">${j.message || ''} • Dibuat: ${new Date(j.created_at * 1000).toLocaleString('id-ID')}</p>
                 </div>
                 <div class="flex items-center gap-2">
+                  ${j.state === 'awaiting_selection' ? `
+                    <button onclick="openTopicSelectionModal('${j.id}')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                      <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Pilih Topik
+                    </button>
+                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                      <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Batalkan
+                    </button>
+                  ` : ''}
                   ${isRunning ? `
                     <button onclick="pauseJob('${j.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="pause" class="w-3.5 h-3.5"></i> Jeda
@@ -656,6 +1080,9 @@
                         <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-semibold text-[10px]">Viral: ${Math.round(clip.score)}</span>
                       </div>
                       ${clip.hook ? `<p class="text-xs text-slate-600 italic bg-white p-2 rounded border border-slate-200">"${clip.hook}"</p>` : ''}
+                      <button onclick="openClipInStudio('${j.id}', '${clip.id}')" class="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-emerald-400"></i> Buka di Studio Editor
+                      </button>
                     </div>
                   `).join('')}
                 </div>

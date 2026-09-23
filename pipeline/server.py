@@ -206,12 +206,27 @@ def run_job(job_id: str) -> None:
                 clip_count=opts.get("clip_count", 5), llm_config=cfg,
             )
             bookmark["plan"] = plan
+            bookmark["stages_done"] = list(done | {"curate"})
             db.update_job(job_id, bookmark=bookmark)
             done.add("curate")
+
+            # Jika interactive_selection aktif dan user belum memilih klip, jeda ke status 'awaiting_selection'
+            if opts.get("interactive_selection", True) and "selected_indices" not in bookmark:
+                db.update_job(job_id, state="awaiting_selection", progress=45.0,
+                              message="Menunggu pilihan topik oleh pengguna", bookmark=bookmark)
+                logger.info(f"Job {job_id} awaiting topic selection by user.")
+                return
 
         shorts = plan.get("shorts") or []
         if not shorts:
             raise RuntimeError("Tidak ada klip yang bisa dibuat dari video ini")
+
+        # Filter hanya klip yang dipilih pengguna jika ada
+        selected_indices = bookmark.get("selected_indices")
+        if selected_indices:
+            filtered = [s for idx, s in enumerate(shorts, start=1) if idx in selected_indices]
+            if filtered:
+                shorts = filtered
 
         # ---- clips + reframe + subtitles -----------------------------------
         clips_meta = bookmark.get("clips")
@@ -416,6 +431,21 @@ def resume_job(job_id: str) -> dict:
     db.update_job(job_id, state="queued", message="Dipulihkan")
     _jobs.put(job_id)
     return {"ok": True, "job_id": job_id}
+
+
+@app.post("/jobs/{job_id}/select-topics")
+def select_topics(job_id: str, payload: dict) -> dict:
+    job = db.get_job(job_id)
+    if not job:
+        raise HTTPException(404, "Job tidak ditemukan")
+    selected_indices = payload.get("selected_indices", [])
+    if not selected_indices:
+        raise HTTPException(400, "Pilih minimal 1 topik")
+    bookmark = job.get("bookmark") or {}
+    bookmark["selected_indices"] = [int(x) for x in selected_indices]
+    db.update_job(job_id, state="queued", message="Melanjutkan render klip terpilih...", bookmark=bookmark)
+    _jobs.put(job_id)
+    return {"ok": True, "job_id": job_id, "selected_indices": bookmark["selected_indices"]}
 
 
 @app.delete("/jobs/{job_id}")

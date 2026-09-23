@@ -175,8 +175,8 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
 
-    out_h = VERTICAL_H
-    out_w = int(out_h * ASPECT_9_16)
+    out_h = 1920  # High Definition 1080x1920
+    out_w = 1080
     if out_w % 2:
         out_w += 1
 
@@ -190,7 +190,8 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
         ffmpeg(), "-y", "-loglevel", "error",
         "-f", "rawvideo", "-vcodec", "rawvideo",
         "-s", f"{out_w}x{out_h}", "-pix_fmt", "bgr24", "-r", str(fps),
-        "-i", "-", "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+        "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M",
         "-pix_fmt", "yuv420p", "-an", str(tmp_out),
     ]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
