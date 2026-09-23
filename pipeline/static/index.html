@@ -322,18 +322,18 @@
                 <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-400"></i> Kalibrasi Offset Subtitle
                 </span>
-                <span id="sub-offset-val" class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">0.00s</span>
+                <span id="sub-offset-s-val" class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">0.00s</span>
               </div>
-              <input type="range" id="sub-offset-slider" min="-3" max="3" step="0.05" value="0"
+              <input type="range" id="sub-offset-s" min="-3" max="3" step="0.05" value="0"
                 oninput="setSubOffset(this.value)" class="w-full accent-emerald-500 cursor-pointer">
               
               <div class="flex items-center justify-between gap-1">
                 <div class="flex items-center gap-1">
-                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)-0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">-0.5s</button>
-                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)-0.2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">-0.2s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-s').value)-0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">-0.5s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-s').value)-0.2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">-0.2s</button>
                   <button type="button" onclick="setSubOffset(0)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">0s</button>
-                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)+0.2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.2s</button>
-                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)+0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.5s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-s').value)+0.2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.2s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-s').value)+0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.5s</button>
                 </div>
                 <button type="button" id="btn-retranscribe" onclick="retranscribeCurrentClip()"
                   class="px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 text-indigo-300 font-bold rounded text-[11px] flex items-center gap-1 transition-all">
@@ -439,8 +439,8 @@
                 <div>
                   <span class="text-[11px] text-slate-400 block mb-1">Warna Font</span>
                   <div class="flex items-center gap-2">
-                    <input type="color" id="sub-font-color" value="#facc15" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
-                    <span id="sub-font-color-hex" class="text-xs text-slate-300 uppercase font-mono">#FACC15</span>
+                    <input type="color" id="sub-color-text" value="#facc15" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+                    <span id="sub-color-text-val" class="text-xs text-slate-300 uppercase font-mono">#FACC15</span>
                   </div>
                 </div>
                 <div>
@@ -448,9 +448,9 @@
                     <span class="text-[11px] text-slate-400">Background Box</span>
                     <input type="checkbox" id="sub-bg-enable" onchange="updateLiveSubtitlePreview()" class="rounded bg-[#0B0F19] border-slate-700 accent-emerald-500 w-3.5 h-3.5">
                   </div>
-                  <div class="flex items-center gap-2">
-                    <input type="color" id="sub-bg-color" value="#000000" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
-                    <span id="sub-bg-color-hex" class="text-xs text-slate-400 uppercase font-mono">#000000</span>
+                  <div id="sub-bg-color-picker" class="flex items-center gap-2 opacity-40 pointer-events-none">
+                    <input type="color" id="sub-color-bg" value="#000000" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+                    <span id="sub-color-bg-val" class="text-xs text-slate-400 uppercase font-mono">#000000</span>
                   </div>
                 </div>
               </div>
@@ -965,6 +965,13 @@
           video.currentTime = (pct / 100) * dur;
         };
 
+        const subOffsetEl = document.getElementById('sub-offset-s');
+        const subColorTextEl = document.getElementById('sub-color-text');
+        const subBgEnableEl = document.getElementById('sub-bg-enable');
+        const subColorBgEl = document.getElementById('sub-color-bg');
+        const subFontSizeEl = document.getElementById('sub-font-size');
+        const subPosYEl = document.getElementById('sub-pos-y');
+
         if (clip.subtitle_style) {
           const s = clip.subtitle_style;
           if (s.font) {
@@ -972,14 +979,14 @@
             const name = s.font.split(',')[0].replace(/['"]/g, '');
             selectFontFamily(s.font, name, fontCard);
           }
-          if (s.color) document.getElementById('sub-color-text').value = s.color;
-          if (s.enable_bg !== undefined) document.getElementById('sub-bg-enable').checked = s.enable_bg;
-          if (s.bg) document.getElementById('sub-color-bg').value = s.bg;
-          if (s.size) document.getElementById('sub-font-size').value = s.size;
-          if (s.pos_y) document.getElementById('sub-pos-y').value = s.pos_y;
-          if (s.offset_s !== undefined) document.getElementById('sub-offset-s').value = s.offset_s;
+          if (s.color && subColorTextEl) subColorTextEl.value = s.color;
+          if (s.enable_bg !== undefined && subBgEnableEl) subBgEnableEl.checked = s.enable_bg;
+          if (s.bg && subColorBgEl) subColorBgEl.value = s.bg;
+          if (s.size && subFontSizeEl) subFontSizeEl.value = s.size;
+          if (s.pos_y && subPosYEl) subPosYEl.value = s.pos_y;
+          if (subOffsetEl) subOffsetEl.value = (s.offset_s !== undefined ? s.offset_s : 0.0);
         } else {
-          document.getElementById('sub-offset-s').value = 0.0;
+          if (subOffsetEl) subOffsetEl.value = 0.0;
         }
 
         updateLiveSubtitlePreview();
