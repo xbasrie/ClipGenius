@@ -687,18 +687,26 @@
           const dur = (clip.end_s - clip.start_s).toFixed(0);
           const isSelected = activeEditingClip && activeEditingClip.id === clip.id;
           const card = document.createElement('div');
-          card.className = `flex-shrink-0 w-44 bg-slate-950 border ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800 hover:border-slate-700'} rounded-lg p-2.5 cursor-pointer transition-all space-y-1.5`;
+          card.className = `flex-shrink-0 w-60 bg-slate-950 border ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/30 bg-slate-900/90' : 'border-slate-800 hover:border-slate-700 bg-slate-950'} rounded-xl p-2.5 cursor-pointer transition-all flex items-center gap-3 overflow-hidden shadow-sm`;
           card.onclick = () => openClipInStudio(jobId, clip.id);
           card.innerHTML = `
-            <div class="aspect-[9/16] max-h-24 bg-black rounded overflow-hidden flex items-center justify-center relative pointer-events-none">
+            <div class="w-14 h-20 bg-black rounded-lg overflow-hidden flex-shrink-0 relative pointer-events-none border border-slate-800 shadow-inner">
               <video src="${API_BASE}/media/${jobId}/${clip.file.split(/[\\/]/).pop()}?token=dev-local-token" class="w-full h-full object-cover"></video>
-              <div class="absolute bottom-1 right-1 bg-black/70 px-1.5 py-0.5 rounded text-[10px] text-white font-mono">${dur}s</div>
+              <div class="absolute bottom-1 right-1 bg-black/80 px-1 py-0.2 rounded text-[9px] text-white font-mono leading-none">${dur}s</div>
             </div>
-            <div class="flex items-center justify-between text-[11px] pt-0.5">
-              <span class="font-bold text-white truncate">Klip #${idx + 1}</span>
-              <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-semibold border border-emerald-800">★ ${Math.round(clip.score)}</span>
+            <div class="flex-1 min-w-0 flex flex-col justify-between h-20 py-0.5">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="font-bold text-xs text-white truncate">Klip #${idx + 1}</span>
+                  <span class="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold border border-emerald-800/80 whitespace-nowrap">★ ${Math.round(clip.score)}</span>
+                </div>
+                <p class="text-[11px] text-slate-300 line-clamp-2 leading-tight font-medium">${clip.hook ? `"${clip.hook}"` : '<span class="text-slate-500 italic">Tanpa hook teks</span>'}</p>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60">
+                <span>⏱ ${dur} detik</span>
+                <span class="${isSelected ? 'text-emerald-400 font-semibold' : 'text-slate-400'}">${isSelected ? 'Aktif' : 'Pilih'}</span>
+              </div>
             </div>
-            <p class="text-[10px] text-slate-400 truncate italic">"${clip.hook || 'Tanpa hook'}"</p>
           `;
           strip.appendChild(card);
         });
