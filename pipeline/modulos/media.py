@@ -263,6 +263,13 @@ def fetch_youtube_transcript(url: str, output_dir: str | Path) -> dict | None:
     out_dir = Path(output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     sub_prefix = out_dir / "yt_subs"
+
+    # Check if subtitle files already exist in directory from previous attempt
+    existing = sorted(out_dir.glob("yt_subs.*.json3"), key=lambda p: p.stat().st_size, reverse=True)
+    if existing:
+        logger.info("Found existing YouTube subtitle file: %s", existing[0].name)
+        return parse_json3_subs(existing[0])
+
     cmd = [
         *config.ytdlp(),
         "--js-runtimes", "node",
@@ -270,18 +277,19 @@ def fetch_youtube_transcript(url: str, output_dir: str | Path) -> dict | None:
         "--skip-download",
         "--write-auto-sub",
         "--write-sub",
-        "--sub-lang", "id-orig,id,en.*,id.*",
+        "--sub-lang", "id-orig,id",
         "--sub-format", "json3",
+        "--ignore-errors",
         "-o", f"{sub_prefix}.%(ext)s",
         url,
     ]
     try:
         _run(cmd, timeout_s=45)
-        # Find any generated .json3 file
-        candidates = sorted(out_dir.glob("yt_subs.*.json3"), key=lambda p: p.stat().st_size, reverse=True)
-        if candidates:
-            logger.info("Found YouTube subtitle file: %s", candidates[0].name)
-            return parse_json3_subs(candidates[0])
     except Exception as e:
-        logger.warning("Failed to fetch YouTube subtitles for %s: %s", url, e)
+        logger.warning("yt-dlp sub fetch reported error (checking files anyway): %s", e)
+
+    candidates = sorted(out_dir.glob("yt_subs.*.json3"), key=lambda p: p.stat().st_size, reverse=True)
+    if candidates:
+        logger.info("Found YouTube subtitle file: %s", candidates[0].name)
+        return parse_json3_subs(candidates[0])
     return None

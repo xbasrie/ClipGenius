@@ -152,7 +152,8 @@ def run_job(job_id: str) -> None:
                 (title, duration, json.dumps(meta), job["project_id"]),
             )
             bookmark.update({"video_path": str(video_path), "title": title,
-                             "duration": duration, "meta": meta})
+                             "duration": duration, "meta": meta,
+                             "stages_done": list(done | {"download"})})
             db.update_job(job_id, bookmark=bookmark)
             done.add("download")
 
@@ -184,6 +185,7 @@ def run_job(job_id: str) -> None:
                     progress_cb=_stt_cb,
                 )
             bookmark["transcript"] = transcript
+            bookmark["stages_done"] = list(done | {"transcribe"})
             db.update_job(job_id, bookmark=bookmark)
             done.add("transcribe")
 
