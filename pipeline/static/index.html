@@ -12,8 +12,8 @@
   <style>
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #F8FAF9;
-      color: #0F172A;
+      background-color: #0B0F19;
+      color: #F1F5F9;
     }
     .card-shadow {
       box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
@@ -28,43 +28,43 @@
       height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #F1F5F1;
+      background: #0E1424;
       border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb {
-      background: #CBD5E1;
+      background: #1E293B;
       border-radius: 9999px;
-      border: 1px solid #E2E8F0;
+      border: 1px solid #0E1424;
       transition: background 0.2s ease;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #94A3B8;
+      background: #10B981;
     }
     * {
       scrollbar-width: thin;
-      scrollbar-color: #CBD5E1 #F1F5F1;
+      scrollbar-color: #1E293B #0E1424;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased bg-[#F8FAF9] text-slate-900">
+<body class="min-h-screen flex flex-col antialiased bg-[#0B0F19] text-slate-100">
   <!-- Top Navbar -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <header class="bg-[#0F1626]/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm font-bold text-lg">
           CG
         </div>
         <div>
-          <h1 class="font-bold text-slate-900 text-lg leading-tight">ClipGenius</h1>
-          <p class="text-xs text-slate-500 font-medium">AI Video Repurposing • Local-First Desktop Studio</p>
+          <h1 class="font-bold text-white text-lg leading-tight font-extrabold tracking-tight">ClipGenius</h1>
+          <p class="text-xs text-slate-400 font-medium">AI Video Repurposing • Local-First Desktop Studio</p>
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <div id="sidecar-status" class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <div id="sidecar-status" class="flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/80">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           Sidecar Connected (Port 8089)
         </div>
-        <button onclick="switchTab('settings')" class="p-2 text-slate-400 hover:text-white hover:bg-slate-100 rounded-lg transition-colors" title="Pengaturan">
+        <button onclick="switchTab('settings')" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors" title="Pengaturan">
           <i data-lucide="settings" class="w-5 h-5"></i>
         </button>
       </div>
@@ -73,107 +73,106 @@
 
   <!-- Main Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Navigation Tabs -->
-    <div class="flex items-center justify-between border-b border-slate-200 mb-8">
-      <nav class="flex space-x-8" aria-label="Tabs">
-        <button onclick="switchTab('create')" id="tab-create" class="tab-btn border-b-2 border-emerald-700 text-emerald-800 py-3 px-1 text-sm font-semibold flex items-center gap-2">
-          <i data-lucide="sparkles" class="w-4 h-4"></i> Buat Klip Baru
+    <!-- Modern Segmented Navigation Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#111726]/80 backdrop-blur-md border border-slate-800/80 rounded-2xl p-2 mb-8 shadow-xl">
+      <nav class="flex flex-wrap items-center gap-1.5" aria-label="Tabs">
+        <button onclick="switchTab('create')" id="tab-create" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm">
+          <i data-lucide="sparkles" class="w-4 h-4 text-emerald-400"></i> Buat Klip Baru
         </button>
-        <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 py-3 px-1 text-sm font-semibold flex items-center gap-2">
-          <i data-lucide="video" class="w-4 h-4"></i> Studio Editor
+        <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+          <i data-lucide="video" class="w-4 h-4 text-indigo-400"></i> Studio Editor Pro
         </button>
-        <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 py-3 px-1 text-sm font-semibold flex items-center gap-2">
-          <i data-lucide="layers" class="w-4 h-4"></i> Riwayat Proyek & Klip
+        <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+          <i data-lucide="layers" class="w-4 h-4 text-amber-400"></i> Riwayat & Hasil
         </button>
-        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn border-b-2 border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300 py-3 px-1 text-sm font-semibold flex items-center gap-2">
-          <i data-lucide="sliders" class="w-4 h-4"></i> Konfigurasi AI & STT
+        <button onclick="switchTab('settings')" id="tab-settings" class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent">
+          <i data-lucide="sliders" class="w-4 h-4 text-cyan-400"></i> Konfigurasi AI
         </button>
       </nav>
+      <div class="flex items-center gap-2 pr-2 text-xs text-slate-400">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="font-medium text-[11px] text-slate-300">FastAPI Sidecar Ready</span>
+      </div>
     </div>
 
     <!-- VIEW 1: CREATE / INPUT -->
-    <div id="view-create" class="space-y-8">
-      <!-- Stepper Header -->
-      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <div class="flex items-center justify-between max-w-4xl mx-auto">
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow">1</span>
-            <span class="font-semibold text-slate-900 text-sm">Input Video</span>
-          </div>
-          <div class="w-16 h-0.5 bg-slate-200"></div>
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center font-bold text-sm">2</span>
-            <span class="text-slate-500 text-sm">Transkrip & AI</span>
-          </div>
-          <div class="w-16 h-0.5 bg-slate-200"></div>
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center font-bold text-sm">3</span>
-            <span class="text-slate-500 text-sm">Smart Clipping</span>
-          </div>
-          <div class="w-16 h-0.5 bg-slate-200"></div>
-          <div class="flex items-center gap-3">
-            <span class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center font-bold text-sm">4</span>
-            <span class="text-slate-500 text-sm">Review & Export</span>
-          </div>
+    <div id="view-create" class="space-y-6 max-w-5xl mx-auto">
+      <!-- Hero Header & Quick Feature Badges -->
+      <div class="text-center py-4 space-y-3">
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Ubah Video Panjang Jadi Klip Viral</h2>
+        <p class="text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+          Kliping otomatis dengan kurasi AI, transkrip kata-per-kata Whisper, dan layout vertikal 9:16 siap posting ke Shorts, Reels, atau TikTok.
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs">
+          <span class="px-3 py-1 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/80 font-medium flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Transkripsi Offline Whisper
+          </span>
+          <span class="px-3 py-1 rounded-full bg-indigo-950/70 text-indigo-400 border border-indigo-800/80 font-medium flex items-center gap-1.5">
+            <i data-lucide="brain" class="w-3.5 h-3.5"></i> Kurasi Semantik AI
+          </span>
+          <span class="px-3 py-1 rounded-full bg-amber-950/70 text-amber-400 border border-amber-800/80 font-medium flex items-center gap-1.5">
+            <i data-lucide="subtitles" class="w-3.5 h-3.5"></i> Subtitle Per-Kata Dinamis
+          </span>
         </div>
       </div>
 
-      <!-- Main Input Card -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm max-w-4xl mx-auto">
-        <div class="text-center max-w-xl mx-auto mb-8">
-          <h2 class="text-2xl font-bold text-slate-900 mb-2">Ubah Video Panjang Jadi Klip Viral</h2>
-          <p class="text-sm text-slate-600 leading-relaxed">
-            Tempelkan link video YouTube atau TikTok, atau gunakan file lokal. Sistem akan otomatis mentranskripsi, memilih momen terbaik, membuat subtitle, dan memotong klip.
-          </p>
-        </div>
-
+      <!-- Main Input & Settings Card -->
+      <div class="bg-[#111726] rounded-2xl border border-slate-800 p-6 sm:p-8 shadow-2xl space-y-6">
         <form id="job-form" onsubmit="handleCreateJob(event)" class="space-y-6">
-          <!-- URL Input -->
+          <!-- Source Mode Toggle (URL vs Local File) -->
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">URL Video (YouTube / TikTok)</label>
-            <div class="relative">
-              <input type="url" id="input-url" placeholder="https://www.youtube.com/watch?v=... atau link TikTok"
-                class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm">
-              <i data-lucide="link" class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5"></i>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Sumber Video</label>
+            <div class="flex items-center gap-2 p-1.5 bg-[#0B0F19] rounded-xl border border-slate-800 w-fit mb-4">
+              <button type="button" onclick="setSourceType('url')" id="src-tab-url" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-2">
+                <i data-lucide="youtube" class="w-4 h-4 text-emerald-400"></i> Link Online (YouTube / TikTok)
+              </button>
+              <button type="button" onclick="setSourceType('file')" id="src-tab-file" class="px-4 py-2 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-white border border-transparent flex items-center gap-2">
+                <i data-lucide="hard-drive" class="w-4 h-4 text-slate-400"></i> File Video Komputer
+              </button>
+            </div>
+
+            <!-- URL Input Box -->
+            <div id="box-input-url" class="space-y-2">
+              <div class="relative">
+                <input type="url" id="input-url" placeholder="https://www.youtube.com/watch?v=... atau link TikTok"
+                  class="w-full pl-11 pr-4 py-3.5 bg-[#0B0F19] border border-slate-800 rounded-xl text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all text-sm">
+                <i data-lucide="link" class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5"></i>
+              </div>
+              <p class="text-xs text-slate-500">Mendukung video publik YouTube (Podcast, Ceramah, Wawancara) & TikTok.</p>
+            </div>
+
+            <!-- Local File Input Box -->
+            <div id="box-input-file" class="space-y-2 hidden">
+              <div class="relative">
+                <input type="text" id="input-file" placeholder="C:\Users\elbasrie\Videos\podcast.mp4"
+                  class="w-full pl-11 pr-4 py-3.5 bg-[#0B0F19] border border-slate-800 rounded-xl text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all text-sm font-mono">
+                <i data-lucide="file-video" class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5"></i>
+              </div>
+              <p class="text-xs text-slate-500">Format didukung: MP4, MKV, MOV, WEBM. Masukkan path absolut file di harddisk.</p>
             </div>
           </div>
 
-          <div class="relative flex py-1 items-center">
-            <div class="flex-grow border-t border-slate-200"></div>
-            <span class="flex-shrink mx-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">ATAU FILE LOKAL</span>
-            <div class="flex-grow border-t border-slate-200"></div>
-          </div>
-
-          <!-- Local File Path -->
-          <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">File Path Video di Komputer</label>
-            <div class="relative">
-              <input type="text" id="input-file" placeholder="C:\Users\...\Videos\podcast.mp4"
-                class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm">
-              <i data-lucide="hard-drive" class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5"></i>
-            </div>
-            <p class="text-xs text-slate-500 mt-1">Format didukung: MP4, MKV, MOV, WEBM.</p>
-          </div>
-
-          <!-- Options Grid -->
-          <div class="pt-4 border-t border-slate-200">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800 mb-4">Pengaturan Repurposing</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <!-- Durasi Maksimal Klip -->
+          <!-- Grouped Parameters (2 Clean Grid Cards) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-800/80">
+            <!-- Group 1: Format & Durasi -->
+            <div class="bg-[#0B0F19] rounded-xl border border-slate-800/90 p-4 space-y-3.5">
+              <div class="flex items-center gap-2 pb-2 border-b border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-emerald-400"></i> Format & Durasi Klip
+              </div>
+              
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Durasi Maksimal Klip</label>
-                <select id="opt-duration" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500">
-                  <option value="15">15 Detik (Shorts/Reels)</option>
-                  <option value="30" selected>30 Detik (Rekomendasi)</option>
-                  <option value="45">45 Detik</option>
-                  <option value="60">60 Detik (1 Menit)</option>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Durasi Maksimal Tiap Klip</label>
+                <select id="opt-duration" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
+                  <option value="15">15 Detik (Shorts/Reels Ringkas)</option>
+                  <option value="30" selected>30 Detik (Rekomendasi Standar)</option>
+                  <option value="45">45 Detik (Narasi Menengah)</option>
+                  <option value="60">60 Detik (1 Menit Penuh)</option>
                 </select>
               </div>
 
-              <!-- Jumlah Klip yang Dibuat -->
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Jumlah Klip Dihasilkan</label>
-                <select id="opt-count" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500">
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Jumlah Klip Dihasilkan</label>
+                <select id="opt-count" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
                   <option value="3">3 Klip Terbaik</option>
                   <option value="5" selected>5 Klip Rekomendasi</option>
                   <option value="8">8 Klip</option>
@@ -181,99 +180,101 @@
                 </select>
               </div>
 
-              <!-- Model Transkripsi STT -->
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Model Speech-to-Text</label>
-                <select id="opt-stt" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500">
-                  <option value="fast" selected>Fast (Whisper Base / Tiny)</option>
-                  <option value="balanced">Balanced (Whisper Small)</option>
-                  <option value="accurate">Accurate (Whisper Medium)</option>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Aspek Rasio Video Target</label>
+                <select id="opt-ratio" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
+                  <option value="9:16" selected>9:16 Vertikal (TikTok / Shorts / Reels)</option>
+                  <option value="16:9">16:9 Landscape (Original YouTube)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Group 2: AI & Subtitle -->
+            <div class="bg-[#0B0F19] rounded-xl border border-slate-800/90 p-4 space-y-3.5">
+              <div class="flex items-center gap-2 pb-2 border-b border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">
+                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i> AI & Transkripsi Subtitle
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Model Speech-to-Text (STT)</label>
+                <select id="opt-stt" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
+                  <option value="fast" selected>Fast (Whisper Base / Cepat & Ringan)</option>
+                  <option value="balanced">Balanced (Whisper Small / Seimbang)</option>
+                  <option value="accurate">Accurate (Whisper Medium / Paling Akurat)</option>
                 </select>
               </div>
 
-              <!-- Aspek Rasio Video -->
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Aspek Rasio Output</label>
-                <select id="opt-aspect" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500">
-                  <option value="9:16" selected>9:16 Vertikal (TikTok / Reels / Shorts)</option>
-                  <option value="16:9">16:9 Landscape Asli</option>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Preset Gaya Subtitle</label>
+                <select id="opt-style" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
+                  <option value="bold_yellow" selected>Bold Yellow Pop (Kuning Tebal TikTok)</option>
+                  <option value="karaoke">Karaoke Gradient (Highlight Kata)</option>
+                  <option value="clean_white">Clean White (Klasik Minimalis)</option>
                 </select>
               </div>
 
-              <!-- Gaya Subtitle -->
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Preset Subtitle</label>
-                <select id="opt-subtitle" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-800 focus:bg-white focus:ring-2 focus:ring-emerald-500">
-                  <option value="bold_yellow" selected>Bold Yellow (Gaya Kreator)</option>
-                  <option value="karaoke_pop">Karaoke Highlight (Pop-up)</option>
-                  <option value="classic_white">Classic White Border</option>
-                </select>
-              </div>
-
-              <!-- Options Checkboxes -->
-              <div class="flex flex-col justify-center gap-2 pt-2">
-                <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
-                  <input type="checkbox" id="opt-reframe" checked class="w-4 h-4 text-emerald-600 rounded bg-white border-slate-300 focus:ring-emerald-600 accent-emerald-600">
-                  <span>Smart Face & Speaker Tracking</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300" title="Centang untuk download subtitle YouTube instan. Uncheck untuk paksa Whisper STT offline jika ingin akurasi audio 100% pas.">
-                  <input type="checkbox" id="opt-yt-subs" checked class="w-4 h-4 text-emerald-600 rounded bg-white border-slate-300 focus:ring-emerald-600 accent-emerald-600">
+              <!-- Toggles -->
+              <div class="space-y-2 pt-1">
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="opt-use-yt-subs" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
                   <span>Gunakan Subtitle YouTube (Bypass Cepat)</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="opt-tracking" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
+                  <span>Smart Face Tracking (Auto Crop ke Wajah Pembicara)</span>
                 </label>
               </div>
             </div>
           </div>
 
-          <!-- Submit Button -->
-          <div class="pt-4 flex items-center justify-end">
-            <button type="submit" id="btn-submit"
-              class="w-full sm:w-auto px-8 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
-              <i data-lucide="play" class="w-5 h-5 fill-current"></i>
-              Mulai Proses Otomatis
+          <!-- Submit CTA -->
+          <div class="pt-2 flex justify-end">
+            <button type="submit"
+              class="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:shadow-emerald-900/40 transition-all flex items-center justify-center gap-2 text-sm">
+              <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+              Mulai Ekstraksi & Kurasi AI
             </button>
           </div>
         </form>
       </div>
 
       <!-- Active Job Progress Banner -->
-      <div id="active-job-banner" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-4xl mx-auto">
-        <div class="flex items-center justify-between mb-3">
+      <div id="active-job-banner" class="hidden bg-[#111726] border border-slate-800 rounded-2xl p-6 shadow-xl max-w-5xl mx-auto space-y-3">
+        <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-sm animate-spin">
+            <div class="w-8 h-8 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800 flex items-center justify-center font-bold text-sm animate-spin">
               ⟳
             </div>
             <div>
-              <h4 class="font-bold text-slate-900 text-sm" id="progress-title">Memproses Video...</h4>
+              <h4 class="font-bold text-white text-sm" id="progress-title">Memproses Video...</h4>
               <p class="text-xs text-slate-400" id="progress-message">Mengunduh stream video...</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <span id="progress-eta" class="text-xs font-medium text-slate-400 bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full hidden">ETA: -</span>
-            <span class="text-sm font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full" id="progress-percent">0%</span>
-            <button type="button" id="btn-select-topics" onclick="openTopicSelectionModal()" class="text-xs font-semibold px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full hover:bg-indigo-100 transition-colors hidden">Pilih Topik (Siap)</button>
-            <button type="button" id="btn-pause-resume" onclick="togglePauseResumeActiveJob()" class="text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors">Jeda</button>
-            <button type="button" onclick="cancelActiveJob()" class="text-xs font-semibold px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full hover:bg-rose-100 transition-colors">Batalkan</button>
+            <span id="progress-eta" class="text-xs font-medium text-slate-400 bg-slate-800 px-2.5 py-1 rounded-full hidden">ETA: -</span>
+            <span class="text-sm font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-3 py-1 rounded-full" id="progress-percent">0%</span>
+            <button type="button" id="btn-select-topics" onclick="openTopicSelectionModal()" class="text-xs font-semibold px-3 py-1 bg-indigo-950 text-indigo-400 border border-indigo-800 rounded-full hover:bg-indigo-900 transition-colors hidden">Pilih Topik (Siap)</button>
+            <button type="button" id="btn-pause-resume" onclick="togglePauseResumeActiveJob()" class="text-xs font-semibold px-3 py-1 bg-amber-950 text-amber-400 border border-amber-800 rounded-full hover:bg-amber-900 transition-colors">Jeda</button>
+            <button type="button" onclick="cancelActiveJob()" class="text-xs font-semibold px-3 py-1 bg-rose-950 text-rose-400 border border-rose-800 rounded-full hover:bg-rose-900 transition-colors">Batalkan</button>
           </div>
         </div>
-        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200">
-          <div id="progress-bar" class="bg-emerald-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+          <div id="progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
         </div>
-      </div>
-    </div>
       </div>
     </div>
 
-    <!-- VIEW 1.5: STUDIO EDITOR (CAPCUT / PREMIERE PRO STYLE) -->
+    <!-- VIEW 1.5: STUDIO EDITOR PRO (MODERN 2-PANEL WORKSTATION) -->
     <div id="view-editor" class="hidden space-y-4">
-      <!-- Editor Header & Project Selector -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white text-slate-900 px-5 py-3 rounded-xl shadow-sm border border-slate-200 gap-3">
+      <!-- Studio Header & Project Bar -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-[#111726] text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-800 gap-3">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-sm">
+          <div class="w-8 h-8 rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-800 flex items-center justify-center font-bold text-sm">
             <i data-lucide="video" class="w-4 h-4"></i>
           </div>
           <div>
-            <h2 class="text-sm font-bold tracking-wide uppercase text-slate-900 font-bold">ClipGenius Studio Editor Pro</h2>
-            <p class="text-xs text-slate-500" id="editor-clip-label">Pilih proyek dan klip di bawah untuk mulai mengedit.</p>
+            <h2 class="text-sm font-bold tracking-wide uppercase text-white tracking-tight">ClipGenius Studio Editor Pro</h2>
+            <p class="text-xs text-slate-400" id="editor-clip-label">Pilih proyek dan klip di bawah untuk mulai mengedit.</p>
           </div>
         </div>
 
@@ -281,226 +282,272 @@
           <!-- Project Dropdown Selector -->
           <div class="flex items-center gap-2">
             <label class="text-xs text-slate-400 font-semibold whitespace-nowrap">Proyek:</label>
-            <select id="editor-project-select" onchange="onStudioProjectChange(this.value)" class="bg-slate-50 border border-slate-300 text-slate-900 rounded-lg px-3 py-1.5 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none max-w-[200px] truncate">
+            <select id="editor-project-select" onchange="onStudioProjectChange(this.value)" class="bg-[#0B0F19] border border-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-xs focus:border-emerald-500 outline-none max-w-[200px] truncate">
               <option value="">Pilih Proyek...</option>
             </select>
           </div>
 
-          <button onclick="saveClipEdits()" class="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap">
+          <button onclick="saveClipEdits()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
             <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-400"></i> Simpan
           </button>
 
-          <button onclick="exportCurrentStudioClip()" class="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap">
+          <button onclick="exportCurrentStudioClip()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
             <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Video
           </button>
         </div>
       </div>
 
-      <!-- Studio Work Area (3 Columns: Assets, Canvas, Subtitle Styler) -->
-      <div class="grid grid-cols-12 gap-4 items-start">
-        <!-- Left: Asset & Transcript List -->
-        <div class="col-span-12 lg:col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-[520px] text-slate-700">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Transkrip Subtitle</span>
-            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 border border-slate-200" id="editor-word-count">0 kata</span>
-          </div>
-          <div id="editor-transcript-list" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
-            <div class="text-slate-500 text-center py-10">Buka salah satu klip di tab Riwayat untuk mengedit subtitle.</div>
-          </div>
-        </div>
-
-        <!-- Center: 9:16 Video Player Canvas -->
-        <div class="col-span-12 lg:col-span-5 bg-white border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center h-[520px] shadow-sm">
-          <div class="h-full max-h-[490px] w-auto aspect-[9/16] bg-black rounded-lg overflow-hidden relative shadow-2xl flex items-center justify-center border border-slate-800">
-            <video id="editor-video-player" class="w-full h-full object-contain" controls playsinline>
-              <source id="editor-video-source" src="" type="video/mp4">
-            </video>
-            <!-- Live Hook Overlay Preview (Top) -->
-            <div id="editor-hook-overlay" class="absolute top-5 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20 hidden">
-              <span id="editor-hook-text" class="inline-block px-3 py-1.5 rounded-lg font-black tracking-tight text-white bg-black/75 backdrop-blur-sm border border-white/20 text-xs uppercase shadow-xl drop-shadow-md max-w-[92%] break-words">
-              </span>
-            </div>
-            <!-- Live Subtitle Overlay Preview -->
-            <div id="editor-sub-overlay" class="absolute bottom-16 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20">
-              <span id="editor-sub-text" class="px-2.5 py-1 rounded font-black tracking-tight leading-tight uppercase drop-shadow-md text-yellow-300 text-sm">
-                PRATINJAU SUBTITLE
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Subtitle & Typography Styler -->
-        <div class="col-span-12 lg:col-span-4 bg-white border border-slate-200 rounded-xl p-4 flex flex-col h-[520px] text-slate-800 overflow-y-auto space-y-4 shadow-sm">
-          <div class="pb-3 border-b border-slate-800">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Penata Subtitle & Tipografi</h3>
-            <p class="text-[11px] text-slate-500">Sesuaikan font, warna teks, background opsional, dan posisi.</p>
-          </div>
-
-          <!-- Font Family with Visual Typography Preview -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="text-[11px] font-semibold text-slate-400 uppercase">Pilihan Font & Contoh</label>
-              <span id="active-font-name" class="text-[10px] text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">Montserrat</span>
-            </div>
-            <input type="hidden" id="sub-font-family" value="'Montserrat', sans-serif">
-            
-            <div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1" id="font-cards-container">
-              <button type="button" onclick="selectFontFamily(`'Montserrat', sans-serif`, 'Montserrat', this)"
-                class="font-card active-font text-left p-2 rounded-lg border border-emerald-600 bg-emerald-50/70 ring-1 ring-emerald-600 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
-                <span class="text-[10px] text-slate-400 font-medium">Montserrat</span>
-                <span class="text-xs font-black text-slate-900 truncate" style="font-family: 'Montserrat', sans-serif;">VIRAL HOOK</span>
-              </button>
-              <button type="button" onclick="selectFontFamily(`'Impact', sans-serif`, 'Impact', this)"
-                class="font-card text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col gap-0.5">
-                <span class="text-[10px] text-slate-400 font-medium">Impact</span>
-                <span class="text-xs text-white truncate" style="font-family: 'Impact', sans-serif; letter-spacing: 0.5px;">BOLD IMPACT</span>
-              </button>
-              <button type="button" onclick="selectFontFamily(`'Bebas Neue', sans-serif`, 'Bebas Neue', this)"
-                class="font-card text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col gap-0.5">
-                <span class="text-[10px] text-slate-400 font-medium">Bebas Neue</span>
-                <span class="text-sm text-slate-900 truncate" style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px;">SHORTS TITLE</span>
-              </button>
-              <button type="button" onclick="selectFontFamily(`'Anton', sans-serif`, 'Anton', this)"
-                class="font-card text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col gap-0.5">
-                <span class="text-[10px] text-slate-400 font-medium">Anton</span>
-                <span class="text-xs text-white truncate" style="font-family: 'Anton', sans-serif;">TRENDING</span>
-              </button>
-              <button type="button" onclick="selectFontFamily(`'Poppins', sans-serif`, 'Poppins', this)"
-                class="font-card text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col gap-0.5">
-                <span class="text-[10px] text-slate-400 font-medium">Poppins</span>
-                <span class="text-xs font-bold text-slate-900 truncate" style="font-family: 'Poppins', sans-serif;">Dynamic Bold</span>
-              </button>
-              <button type="button" onclick="selectFontFamily(`'Inter', sans-serif`, 'Inter', this)"
-                class="font-card text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col gap-0.5">
-                <span class="text-[10px] text-slate-400 font-medium">Inter</span>
-                <span class="text-xs font-bold text-slate-900 truncate" style="font-family: 'Inter', sans-serif;">Clean Modern</span>
-              </button>
-              <button type="button" onclick="selectFontFamily(`'Comic Neue', 'Comic Sans MS', cursive`, 'Komika', this)"
-                class="font-card text-left p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-all flex flex-col gap-0.5 col-span-2">
-                <span class="text-[10px] text-slate-400 font-medium">Komika / Playful</span>
-                <span class="text-xs font-bold text-slate-900 truncate" style="font-family: 'Comic Neue', cursive;">Casual & Fun Comedy</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Colors & Background Toggle -->
-          <div class="space-y-3">
-            <div class="space-y-1.5">
-              <label class="text-[11px] font-semibold text-slate-400 uppercase">Warna Teks</label>
-              <div class="flex items-center gap-2">
-                <input type="color" id="sub-color-text" value="#facc15" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-300 rounded cursor-pointer bg-white">
-                <span class="text-xs text-slate-700 uppercase font-mono" id="sub-color-text-val">#FACC15</span>
-              </div>
-            </div>
-
-            <!-- Background Optional Checkbox -->
-            <div class="space-y-2 pt-1 border-t border-slate-200">
-              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-semibold">
-                <input type="checkbox" id="sub-bg-enable" onchange="updateLiveSubtitlePreview()" class="w-4 h-4 text-emerald-600 rounded bg-white border-slate-300 accent-emerald-600">
-                <span>Gunakan Warna Background Teks (Opsional)</span>
-              </label>
-
-              <div id="sub-bg-color-picker" class="flex items-center gap-2 pl-6 opacity-40 pointer-events-none transition-opacity">
-                <input type="color" id="sub-color-bg" value="#000000" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-300 rounded cursor-pointer bg-white">
-                <span class="text-xs text-slate-600 uppercase font-mono" id="sub-color-bg-val">#000000</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Font Size Slider -->
-          <div class="space-y-1.5">
-            <div class="flex justify-between text-[11px] text-slate-400">
-              <span class="font-semibold uppercase">Ukuran Font</span>
-              <span id="sub-font-size-val" class="font-mono text-emerald-700 font-bold">16px</span>
-            </div>
-            <input type="range" id="sub-font-size" min="12" max="32" value="16" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-600">
-          </div>
-
-          <!-- Position Slider (Vertical) -->
-          <div class="space-y-1.5">
-            <div class="flex justify-between text-[11px] text-slate-400">
-              <span class="font-semibold uppercase">Posisi Vertikal (Y)</span>
-              <span id="sub-pos-y-val" class="font-mono text-emerald-700 font-bold">18% (Bawah)</span>
-            </div>
-            <input type="range" id="sub-pos-y" min="5" max="85" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-600">
-          </div>
-
-          <!-- Subtitle Time Offset Slider (Sync Timing) -->
-          <div class="space-y-1.5 pt-2 border-t border-slate-200">
-            <div class="flex justify-between text-[11px] text-slate-400">
-              <span class="font-semibold uppercase flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-emerald-400"></i> Offset / Geser Waktu</span>
-              <span id="sub-offset-s-val" class="font-mono text-emerald-400 font-bold">0.00s (Pas)</span>
-            </div>
-            <p class="text-[10px] text-slate-500 leading-tight">Geser jika subtitle mendahului (-) atau telat (+) dari vokal audio.</p>
-            <input type="range" id="sub-offset-s" min="-3.0" max="3.0" value="0.0" step="0.05" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-600 cursor-pointer">
-            <div class="grid grid-cols-5 gap-1 pt-1">
-              <button type="button" onclick="setSubOffset(-0.5)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded">-0.5s</button>
-              <button type="button" onclick="setSubOffset(-0.2)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded">-0.2s</button>
-              <button type="button" onclick="setSubOffset(0.0)" class="px-1.5 py-1 text-[10px] font-mono bg-emerald-50 border border-emerald-300 text-emerald-800 font-bold rounded">0s</button>
-              <button type="button" onclick="setSubOffset(0.2)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded">+0.2s</button>
-              <button type="button" onclick="setSubOffset(0.5)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded">+0.5s</button>
-            </div>
-          </div>
-
-          <!-- Whisper Retranscribe Clip Button -->
-          <div class="pt-2 border-t border-slate-200">
-            <button type="button" onclick="retranscribeCurrentClip()" id="btn-retranscribe-clip"
-              class="w-full py-2 px-3 bg-slate-50 hover:bg-slate-100 border border-slate-300 hover:border-indigo-400 text-slate-800 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
-              <span>Sinkron Ulang via Whisper AI</span>
+      <!-- Main Studio Workstation (2 Balanced Panels) -->
+      <div class="grid grid-cols-12 gap-5 items-start">
+        <!-- LEFT PANEL: Tabbed Tools (Subtitle / Font & Style / Hook Header) - 5 Columns -->
+        <div class="col-span-12 lg:col-span-5 bg-[#111726] border border-slate-800 rounded-2xl flex flex-col h-[580px] shadow-xl overflow-hidden">
+          <!-- Tool Navigation Tabs -->
+          <div class="flex items-center gap-1 p-2 bg-[#0B0F19] border-b border-slate-800 shrink-0">
+            <button onclick="switchStudioTool('subs')" id="stool-subs" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs transition-all flex items-center gap-1.5">
+              <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Subtitle & Waktu
             </button>
-            <p class="text-[9px] text-slate-500 mt-1 leading-tight text-center">Transkripsi offline langsung dari audio klip ini untuk hasil pas 100%.</p>
+            <button onclick="switchStudioTool('style')" id="stool-style" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5">
+              <i data-lucide="type" class="w-3.5 h-3.5"></i> Font & Gaya
+            </button>
+            <button onclick="switchStudioTool('hook')" id="stool-hook" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Hook Header
+            </button>
           </div>
 
-          <!-- Hook Title Input -->
-          <div class="space-y-1.5 pt-2 border-t border-slate-200">
-            <div class="flex items-center justify-between">
-              <label class="text-[11px] font-semibold text-slate-400 uppercase">Teks Hook Atas (Header Video)</label>
-              <span class="text-[9px] text-emerald-400 font-medium">Pratinjau Live di Atas</span>
+          <!-- TAB 1: Subtitle & Waktu -->
+          <div id="stool-panel-subs" class="flex-1 flex flex-col p-4 overflow-hidden space-y-4">
+            <!-- Timing & Retranscribe Card -->
+            <div class="bg-[#0B0F19] rounded-xl border border-slate-800 p-3.5 space-y-3 shrink-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-emerald-400"></i> Kalibrasi Offset Subtitle
+                </span>
+                <span id="sub-offset-val" class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">0.00s</span>
+              </div>
+              <input type="range" id="sub-offset-slider" min="-3" max="3" step="0.05" value="0"
+                oninput="setSubOffset(this.value)" class="w-full accent-emerald-500 cursor-pointer">
+              
+              <div class="flex items-center justify-between gap-1">
+                <div class="flex items-center gap-1">
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)-0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">-0.5s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)-0.2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">-0.2s</button>
+                  <button type="button" onclick="setSubOffset(0)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">0s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)+0.2)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.2s</button>
+                  <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-slider').value)+0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.5s</button>
+                </div>
+                <button type="button" id="btn-retranscribe" onclick="retranscribeCurrentClip()"
+                  class="px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 text-indigo-300 font-bold rounded text-[11px] flex items-center gap-1 transition-all">
+                  <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> Sinkron Whisper
+                </button>
+              </div>
             </div>
-            <p class="text-[10px] text-slate-500 leading-tight">Judul atau hook penarik atensi di bagian atas video (otomatis ditempel saat export).</p>
-            <input type="text" id="editor-hook-input" oninput="updateLiveSubtitlePreview()" placeholder="Misal: CARA CEPAT KAYA 🤯" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white focus:border-emerald-600 focus:outline-none transition-colors">
+
+            <!-- Words Transcript Header & List -->
+            <div class="flex-1 flex flex-col min-h-0">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Daftar Kata Per-Kata (Editable)</span>
+                <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400 border border-slate-700" id="editor-word-count">0 kata</span>
+              </div>
+              <div id="editor-transcript-list" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-xs">
+                <div class="text-slate-500 text-center py-10">Buka salah satu klip di tab Riwayat untuk mengedit subtitle.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: Font & Gaya -->
+          <div id="stool-panel-style" class="flex-1 p-4 overflow-y-auto space-y-4 hidden">
+            <!-- Font Selection -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Koleksi Font Subtitle</label>
+                <span id="active-font-name" class="text-[10px] text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded">Montserrat</span>
+              </div>
+              <input type="hidden" id="sub-font-family" value="'Montserrat', sans-serif">
+              
+              <div class="grid grid-cols-2 gap-2" id="font-cards-container">
+                <button type="button" onclick="selectFontFamily(`'Montserrat', sans-serif`, 'Montserrat', this)"
+                  class="font-card active-font text-left p-2.5 rounded-xl border border-emerald-500 bg-emerald-950/50 ring-1 ring-emerald-500 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Montserrat</span>
+                    <span class="text-[9px] text-emerald-400 font-semibold font-mono">Modern</span>
+                  </div>
+                  <span style="font-family: 'Montserrat', sans-serif;" class="text-xs font-black text-white truncate">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Impact', sans-serif`, 'Impact', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Impact</span>
+                    <span class="text-[9px] text-slate-400 font-semibold font-mono">Heavy</span>
+                  </div>
+                  <span style="font-family: 'Impact', sans-serif;" class="text-xs font-black text-white truncate tracking-wider">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Bebas Neue', sans-serif`, 'Bebas Neue', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Bebas Neue</span>
+                    <span class="text-[9px] text-slate-400 font-semibold font-mono">Tall</span>
+                  </div>
+                  <span style="font-family: 'Bebas Neue', sans-serif;" class="text-sm text-white truncate tracking-wider">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Anton', sans-serif`, 'Anton', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Anton</span>
+                    <span class="text-[9px] text-slate-400 font-semibold font-mono">Bold</span>
+                  </div>
+                  <span style="font-family: 'Anton', sans-serif;" class="text-xs font-black text-white truncate">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Oswald', sans-serif`, 'Oswald', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Oswald</span>
+                    <span class="text-[9px] text-slate-400 font-semibold font-mono">Condensed</span>
+                  </div>
+                  <span style="font-family: 'Oswald', sans-serif;" class="text-xs font-bold text-white truncate">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Poppins', sans-serif`, 'Poppins', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Poppins</span>
+                    <span class="text-[9px] text-slate-400 font-semibold font-mono">Geometric</span>
+                  </div>
+                  <span style="font-family: 'Poppins', sans-serif;" class="text-xs font-black text-white truncate">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Komika Axis', sans-serif`, 'Komika Axis', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Komika Axis</span>
+                    <span class="text-[9px] text-amber-400 font-semibold font-mono">Comic</span>
+                  </div>
+                  <span style="font-family: 'Komika Axis', sans-serif;" class="text-xs font-bold text-white truncate">CONTOH TEKS VIRAL</span>
+                </button>
+                <button type="button" onclick="selectFontFamily(`'Inter', sans-serif`, 'Inter', this)"
+                  class="font-card text-left p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                  <div class="flex items-center justify-between w-full">
+                    <span class="text-[10px] text-slate-400 font-medium">Inter</span>
+                    <span class="text-[9px] text-slate-400 font-semibold font-mono">Clean</span>
+                  </div>
+                  <span style="font-family: 'Inter', sans-serif;" class="text-xs font-black text-white truncate">CONTOH TEKS VIRAL</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Colors & Background -->
+            <div class="bg-[#0B0F19] rounded-xl border border-slate-800 p-3.5 space-y-3">
+              <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Warna Teks & Kotak Latar</label>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <span class="text-[11px] text-slate-400 block mb-1">Warna Font</span>
+                  <div class="flex items-center gap-2">
+                    <input type="color" id="sub-font-color" value="#facc15" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+                    <span id="sub-font-color-hex" class="text-xs text-slate-300 uppercase font-mono">#FACC15</span>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-[11px] text-slate-400">Background Box</span>
+                    <input type="checkbox" id="sub-bg-enable" onchange="updateLiveSubtitlePreview()" class="rounded bg-[#0B0F19] border-slate-700 accent-emerald-500 w-3.5 h-3.5">
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="color" id="sub-bg-color" value="#000000" onchange="updateLiveSubtitlePreview()" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer">
+                    <span id="sub-bg-color-hex" class="text-xs text-slate-400 uppercase font-mono">#000000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sliders: Font Size & Vertical Position -->
+            <div class="bg-[#0B0F19] rounded-xl border border-slate-800 p-3.5 space-y-3">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[11px] font-semibold text-slate-300">Ukuran Font Subtitle</span>
+                  <span id="sub-font-size-val" class="text-xs text-emerald-400 font-mono font-bold">16px</span>
+                </div>
+                <input type="range" id="sub-font-size" min="12" max="36" value="16" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[11px] font-semibold text-slate-300">Posisi Vertikal Subtitle</span>
+                  <span id="sub-pos-y-val" class="text-xs text-emerald-400 font-mono font-bold">18% (Bawah)</span>
+                </div>
+                <input type="range" id="sub-pos-y" min="5" max="50" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: Hook Header -->
+          <div id="stool-panel-hook" class="flex-1 p-4 overflow-y-auto space-y-4 hidden">
+            <div class="space-y-2">
+              <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Teks Hook Atas (Header Video)</label>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                Teks banner besar di bagian atas video untuk memancing atensi penonton saat 3 detik pertama.
+              </p>
+              <input type="text" id="editor-hook-input" oninput="updateLiveSubtitlePreview()" placeholder="Misal: CARA CEPAT KAYA 🤯"
+                class="w-full bg-[#0B0F19] border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Template Hook Siap Pakai</span>
+              <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="setHookPreset('JANGAN LAKUKAN INI ❌')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">JANGAN LAKUKAN INI ❌</button>
+                <button type="button" onclick="setHookPreset('RAHASIA SUKSES INI 🤫')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">RAHASIA SUKSES INI 🤫</button>
+                <button type="button" onclick="setHookPreset('STOP SCROLLING DULU ⚠️')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">STOP SCROLLING DULU ⚠️</button>
+                <button type="button" onclick="setHookPreset('FAKTA MENGEJUTKAN 😱')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">FAKTA MENGEJUTKAN 😱</button>
+                <button type="button" onclick="setHookPreset('CARA PALING GAMPANG 💡')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">CARA PALING GAMPANG 💡</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL: Video Player Canvas & Integrated Timeline - 7 Columns -->
+        <div class="col-span-12 lg:col-span-7 bg-[#111726] border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-between h-[580px] shadow-xl">
+          <!-- 9:16 Video Player Stage -->
+          <div class="w-full flex-1 flex items-center justify-center min-h-0 relative">
+            <div class="h-full w-auto aspect-[9/16] bg-black rounded-2xl overflow-hidden relative shadow-2xl flex items-center justify-center border border-slate-800/90">
+              <video id="editor-video-player" class="w-full h-full object-contain" controls playsinline>
+                <source id="editor-video-source" src="" type="video/mp4">
+              </video>
+
+              <!-- Live Hook Overlay Preview (Top) -->
+              <div id="editor-hook-overlay" class="absolute top-5 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20 hidden">
+                <span id="editor-hook-text" class="inline-block px-3 py-1.5 rounded-lg font-black tracking-tight text-white bg-black/75 backdrop-blur-sm border border-white/20 text-xs uppercase shadow-xl drop-shadow-md max-w-[92%] break-words">
+                </span>
+              </div>
+
+              <!-- Live Subtitle Overlay Preview (Bottom) -->
+              <div id="editor-sub-overlay" class="absolute bottom-16 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20">
+                <span id="editor-sub-text" class="px-2.5 py-1 rounded font-black tracking-tight leading-tight uppercase drop-shadow-md text-yellow-300 text-sm">
+                  PRATINJAU SUBTITLE
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Integrated Timeline Track Scrubber (Directly Below Video) -->
+          <div class="w-full pt-3 mt-2 border-t border-slate-800 space-y-1.5 shrink-0">
+            <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+              <span class="font-bold flex items-center gap-1.5 uppercase tracking-wider text-slate-300">
+                <i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i> Timeline Playback
+              </span>
+              <span id="timeline-timecode" class="font-mono text-emerald-400 text-xs font-bold">00:00.00 / 00:00.00</span>
+            </div>
+            <div class="relative w-full h-9 bg-[#0B0F19] rounded-xl border border-slate-800 flex items-center px-3 overflow-hidden">
+              <input type="range" id="timeline-scrubber" min="0" max="100" value="0" step="0.1"
+                class="w-full relative z-10 accent-emerald-400 cursor-pointer opacity-80 hover:opacity-100">
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom: CapCut-Style Timeline Track Ruler -->
-      <div class="bg-white border border-slate-200 rounded-xl p-4 text-slate-800 space-y-2 shadow-sm">
-        <div class="flex items-center justify-between text-xs text-slate-600">
-          <span class="font-bold flex items-center gap-1.5 uppercase tracking-wider text-slate-800"><i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-700"></i> Timeline Multi-Track Audio/Video</span>
-          <span id="timeline-timecode" class="font-mono text-emerald-700 text-xs font-bold">00:00.00 / 00:00.00</span>
-        </div>
-        <div class="relative w-full h-12 bg-slate-50 rounded-lg border border-slate-200 flex items-center px-2 overflow-hidden">
-          <!-- Waveform track representation -->
-          <div class="absolute inset-x-2 inset-y-1.5 flex items-center gap-0.5 opacity-40">
-            <div class="h-6 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-8 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-10 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-4 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-9 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-7 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-10 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-5 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-8 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-10 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-3 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-7 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-10 w-1 bg-emerald-600 rounded-full"></div>
-            <div class="h-6 w-1 bg-emerald-600 rounded-full"></div>
-          </div>
-          <!-- Seek bar -->
-          <input type="range" id="timeline-scrubber" min="0" max="100" value="0" step="0.1" class="w-full relative z-10 accent-emerald-700 cursor-pointer opacity-80 hover:opacity-100">
-        </div>
-      </div>
-
-      <!-- Bottom Panel: Project Clips Filmstrip Selector -->
-      <div class="bg-white border border-slate-200 rounded-xl p-4 text-slate-800 space-y-3 shadow-sm">
+      <!-- Bottom Filmstrip Selector: Project Clips Carousel -->
+      <div class="bg-[#111726] border border-slate-800 rounded-2xl p-4 text-slate-200 space-y-3 shadow-xl">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <i data-lucide="film" class="w-4 h-4 text-emerald-400"></i>
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Daftar Klip Dari Proyek Terpilih</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Daftar Klip Dari Proyek Terpilih</span>
           </div>
-          <span id="editor-clips-count" class="text-[11px] text-slate-500 bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded">0 klip</span>
+          <span id="editor-clips-count" class="text-[11px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded">0 klip</span>
         </div>
 
         <div id="editor-clips-strip" class="flex items-center gap-3 overflow-x-auto pb-2 pt-1">
@@ -513,10 +560,10 @@
     <div id="view-jobs" class="hidden space-y-6">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-bold text-slate-900">Daftar Klip & Proyek</h2>
+          <h2 class="text-xl font-extrabold text-white tracking-tight">Daftar Klip & Proyek</h2>
           <p class="text-xs text-slate-400">Tinjau klip yang sudah dipotong, atur trim, dan ekspor ke MP4.</p>
         </div>
-        <button onclick="loadJobs()" class="flex items-center gap-2 text-xs font-semibold px-3 py-2 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-700 shadow-sm">
+        <button onclick="loadJobs()" class="flex items-center gap-2 text-xs font-semibold px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-700 text-slate-200 shadow">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i> Segarkan
         </button>
       </div>
@@ -528,11 +575,11 @@
 
     <!-- TOPIC SELECTION MODAL -->
     <div id="modal-topic-selection" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-      <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl border border-slate-200 space-y-5 text-slate-900">
+      <div class="bg-[#111726] rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-800 space-y-5 text-white">
         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
           <div>
-            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="check-square" class="w-5 h-5 text-emerald-700"></i> Pilih Topik Video Yang Akan Diclip
+            <h3 class="text-base font-bold text-white flex items-center gap-2 font-bold">
+              <i data-lucide="check-square" class="w-5 h-5 text-emerald-400"></i> Pilih Topik Video Yang Akan Diclip
             </h3>
             <p class="text-xs text-slate-400">AI telah menganalisis video dan menemukan kandidat hook/momen terbaik. Centang topik yang ingin dipotong.</p>
           </div>
@@ -546,11 +593,11 @@
           <!-- Dynamically populated -->
         </div>
 
-        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
           <span id="modal-selected-count" class="text-xs font-semibold text-slate-400">0 topik terpilih</span>
           <div class="flex items-center gap-2">
-            <button onclick="closeTopicModal()" class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg text-xs font-semibold">Tutup</button>
-            <button onclick="confirmSelectedTopics()" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold shadow-sm flex items-center gap-1.5">
+            <button onclick="closeTopicModal()" class="px-4 py-2 border border-slate-700 text-slate-300 hover:bg-slate-800 rounded-lg text-xs font-semibold">Tutup</button>
+            <button onclick="confirmSelectedTopics()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5">
               <i data-lucide="scissors" class="w-4 h-4"></i> Mulai Potong Klip Terpilih
             </button>
           </div>
@@ -560,14 +607,14 @@
 
     <!-- VIEW 3: SETTINGS -->
     <div id="view-settings" class="hidden max-w-3xl mx-auto space-y-6">
-      <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm text-slate-900">
-        <h2 class="text-xl font-bold text-slate-900 mb-2">Pengaturan AI & Model</h2>
+      <div class="bg-[#111726] border border-slate-800 rounded-2xl p-8 shadow-xl text-white">
+        text-xl font-extrabold text-white mb-2 tracking-tight">Pengaturan AI & Model</h2>
         <p class="text-xs text-slate-400 mb-6">Pilih provider LLM untuk menganalisis momen viral dan scoring klip.</p>
 
         <form onsubmit="saveSettings(event)" class="space-y-5">
           <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Provider AI Kurasi</label>
-            <select id="set-provider" onchange="toggleProviderInputs()" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:bg-white">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Provider AI Kurasi</label>
+            <select id="set-provider" onchange="toggleProviderInputs()" class="w-full bg-[#0B0F19] border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-200">
               <option value="offline">Offline / Heuristik (Tanpa Internet / Tanpa Biaya)</option>
               <option value="gemini" selected>Google Gemini (Rekomendasi - Cepat & Murah)</option>
               <option value="openai">OpenAI Compatible (GPT-4o mini, OpenRouter, dll)</option>
@@ -576,26 +623,26 @@
           </div>
 
           <div id="box-api-key">
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">API Key</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">API Key</label>
             <input type="password" id="set-key" placeholder="AIzaSy... atau sk-..."
-              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white">
+              class="w-full bg-[#0B0F19] border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600">
             <p class="text-xs text-slate-500 mt-1">Disimpan aman di mesin lokal Anda.</p>
           </div>
 
           <div id="box-model">
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Model Name</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Model Name</label>
             <input type="text" id="set-model" placeholder="gemini-2.0-flash atau gpt-4o-mini"
-              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white">
+              class="w-full bg-[#0B0F19] border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600">
           </div>
 
           <div id="box-base-url">
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Base URL (Opsional / Ollama)</label>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Base URL (Opsional / Ollama)</label>
             <input type="text" id="set-url" placeholder="http://127.0.0.1:11434/v1"
-              class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white">
+              class="w-full bg-[#0B0F19] border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-slate-600">
           </div>
 
-          <div class="pt-4 border-t border-slate-200 flex justify-end">
-            <button type="submit" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-lg text-sm shadow-sm">
+          <div class="pt-4 border-t border-slate-800 flex justify-end">
+            <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-sm shadow">
               Simpan Pengaturan
             </button>
           </div>
@@ -611,6 +658,50 @@
     let currentJobId = null;
     let currentJobState = null;
     let jobProgressHistory = {};
+
+    
+    // Studio Tool Tab Switcher
+    function switchStudioTool(tool) {
+      document.querySelectorAll('.stool-btn').forEach(b => {
+        b.className = "stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5";
+      });
+      const active = document.getElementById('stool-' + tool);
+      if (active) {
+        active.className = "stool-btn px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs transition-all flex items-center gap-1.5";
+      }
+      document.getElementById('stool-panel-subs').classList.toggle('hidden', tool !== 'subs');
+      document.getElementById('stool-panel-style').classList.toggle('hidden', tool !== 'style');
+      document.getElementById('stool-panel-hook').classList.toggle('hidden', tool !== 'hook');
+      lucide.createIcons();
+    }
+
+    // Source Type Switcher (URL vs File)
+    function setSourceType(type) {
+      const btnUrl = document.getElementById('src-tab-url');
+      const btnFile = document.getElementById('src-tab-file');
+      const boxUrl = document.getElementById('box-input-url');
+      const boxFile = document.getElementById('box-input-file');
+
+      if (type === 'url') {
+        btnUrl.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-2";
+        btnFile.className = "px-4 py-2 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-white border border-transparent flex items-center gap-2";
+        boxUrl.classList.remove('hidden');
+        boxFile.classList.add('hidden');
+      } else {
+        btnFile.className = "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-2";
+        btnUrl.className = "px-4 py-2 rounded-lg text-xs font-medium transition-all text-slate-400 hover:text-white border border-transparent flex items-center gap-2";
+        boxFile.classList.remove('hidden');
+        boxUrl.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    // Hook template preset
+    function setHookPreset(txt) {
+      const inp = document.getElementById('editor-hook-input');
+      inp.value = txt;
+      updateLiveSubtitlePreview();
+    }
 
     function formatETA(seconds) {
       if (!seconds || seconds <= 0 || !isFinite(seconds)) return null;
@@ -671,7 +762,7 @@
           const div = document.createElement('label');
           div.className = "flex items-start gap-3 p-3.5 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/30 cursor-pointer transition-all";
           div.innerHTML = `
-            <input type="checkbox" name="topic-select" value="${itemIdx}" checked onchange="updateSelectedTopicCount()" class="mt-1 accent-emerald-600 w-4 h-4">
+            <input type="checkbox" name="topic-select" value="${itemIdx}" checked onchange="updateSelectedTopicCount()" class="mt-1 accent-emerald-500 w-4 h-4">
             <div class="flex-1 space-y-1">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900">${s.title || ('Topik #' + itemIdx)}</span>
@@ -797,11 +888,11 @@
               <div class="space-y-1">
                 <div class="flex items-center justify-between gap-1">
                   <span class="font-bold text-xs text-white truncate">Klip #${idx + 1}</span>
-                  <span class="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded font-bold border border-emerald-800/80 whitespace-nowrap">★ ${Math.round(clip.score)}</span>
+                  <span class="text-[9px] bg-emerald-950/80 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded font-bold border border-emerald-800/80 whitespace-nowrap">★ ${Math.round(clip.score)}</span>
                 </div>
                 <p class="text-[11px] text-slate-300 line-clamp-2 leading-tight font-medium">${clip.hook ? `"${clip.hook}"` : '<span class="text-slate-500 italic">Tanpa hook teks</span>'}</p>
               </div>
-              <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+              <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60">
                 <span>⏱ ${dur} detik</span>
                 <span class="${isSelected ? 'text-emerald-400 font-semibold' : 'text-slate-400'}">${isSelected ? 'Aktif' : 'Pilih'}</span>
               </div>
@@ -942,11 +1033,11 @@
 
       words.forEach((w, idx) => {
         const item = document.createElement('div');
-        item.className = "p-2 rounded bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 hover:border-slate-300 transition-colors";
+        item.className = "p-2 rounded bg-slate-800/80 border border-slate-700/80 flex items-center justify-between gap-2 hover:border-slate-600 transition-colors";
         item.innerHTML = `
           <input type="text" value="${w.text}" onchange="updateTranscriptWord(${idx}, this.value)"
-            class="bg-transparent border-b border-transparent focus:border-emerald-700 text-xs text-slate-800 font-medium outline-none flex-1 truncate">
-          <span class="text-[10px] text-slate-500 font-mono shrink-0">${w.start ? w.start.toFixed(1) + 's' : ''}</span>
+            class="bg-transparent border-b border-transparent focus:border-emerald-400 text-xs text-white font-medium outline-none flex-1 truncate">
+          <span class="text-[10px] text-slate-400 font-mono shrink-0">${w.start ? w.start.toFixed(1) + 's' : ''}</span>
         `;
         container.appendChild(item);
       });
@@ -1001,12 +1092,12 @@
       if (label) label.innerText = fontName;
 
       document.querySelectorAll('.font-card').forEach(c => {
-        c.classList.remove('border-emerald-700', 'bg-emerald-50/70', 'ring-1', 'ring-emerald-700');
-        c.classList.add('border-slate-200', 'bg-slate-50');
+        c.classList.remove('border-emerald-500', 'bg-emerald-950/50', 'ring-1', 'ring-emerald-500');
+        c.classList.add('border-slate-800', 'bg-[#0B0F19]');
       });
       if (btn) {
-        btn.classList.remove('border-slate-200', 'bg-slate-50');
-        btn.classList.add('border-emerald-700', 'bg-emerald-50/70', 'ring-1', 'ring-emerald-700');
+        btn.classList.remove('border-slate-800', 'bg-[#0B0F19]');
+        btn.classList.add('border-emerald-500', 'bg-emerald-950/50', 'ring-1', 'ring-emerald-500');
       }
       updateLiveSubtitlePreview();
     }
@@ -1196,7 +1287,7 @@
         await fetch(`${API_BASE}/jobs/${currentJobId}/cancel`, { method: 'POST', headers: AUTH_HEADER });
         const banner = document.getElementById('active-job-banner');
         banner.innerHTML = `
-          <div class="flex items-center justify-between text-slate-700">
+          <div class="flex items-center justify-between text-slate-300">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold">✕</div>
               <div>
@@ -1214,11 +1305,12 @@
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('border-emerald-600', 'text-emerald-700');
-        btn.classList.add('border-transparent', 'text-slate-500');
+        btn.className = "tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent";
       });
-      document.getElementById('tab-' + tab).classList.add('border-emerald-600', 'text-emerald-700');
-      document.getElementById('tab-' + tab).classList.remove('border-transparent', 'text-slate-500');
+      const activeBtn = document.getElementById('tab-' + tab);
+      if (activeBtn) {
+        activeBtn.className = "tab-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm";
+      }
 
       document.getElementById('view-create').classList.toggle('hidden', tab !== 'create');
       document.getElementById('view-editor').classList.toggle('hidden', tab !== 'editor');
@@ -1240,7 +1332,7 @@
         const badge = document.getElementById('sidecar-status');
         if (data.ok) {
           badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sidecar Aktif (${data.llm.provider.toUpperCase()})`;
-          badge.className = "flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
+          badge.className = "flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800";
         }
       } catch (err) {
         const badge = document.getElementById('sidecar-status');
@@ -1345,10 +1437,10 @@
           if (pauseBtn) {
             if (job.state === 'paused') {
               pauseBtn.textContent = 'Lanjutkan';
-              pauseBtn.className = 'text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full hover:bg-emerald-100 transition-colors';
+              pauseBtn.className = 'text-xs font-semibold px-3 py-1 bg-emerald-950/80 text-emerald-400 border border-emerald-800 rounded-full hover:bg-emerald-100 transition-colors';
             } else {
               pauseBtn.textContent = 'Jeda';
-              pauseBtn.className = 'text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full hover:bg-amber-100 transition-colors';
+              pauseBtn.className = 'text-xs font-semibold px-3 py-1 bg-amber-950 text-amber-400 border border-amber-800 rounded-full hover:bg-amber-900 transition-colors';
             }
           }
 
@@ -1406,9 +1498,9 @@
           const clipsRes = await fetch(`${API_BASE}/jobs/${j.id}/clips`, { headers: AUTH_HEADER });
           const { clips } = await clipsRes.json();
 
-          const badgeColor = j.state === 'completed' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                             j.state === 'failed' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                             j.state === 'paused' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-sky-50 text-sky-800 border-sky-200';
+          const badgeColor = j.state === 'completed' ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800' :
+                             j.state === 'failed' ? 'bg-rose-950/80 text-rose-400 border-rose-800' :
+                             j.state === 'paused' ? 'bg-amber-950/80 text-amber-400 border-amber-800' : 'bg-blue-950/80 text-blue-400 border-blue-800';
 
           const isRunning = j.state === 'processing' || j.state === 'queued';
           const isPaused = j.state === 'paused';
@@ -1416,51 +1508,51 @@
           const histETA = calculateETA(j.id, j.progress || 0, !isRunning);
 
           html += `
-            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+            <div class="bg-[#111726] border border-slate-800 rounded-xl p-6 shadow-lg space-y-4">
               <div class="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
                   <div class="flex items-center gap-2">
-                    <h3 class="font-bold text-slate-900 text-base">${j.id}</h3>
+                    <h3 class="font-bold text-white text-base">${j.id}</h3>
                     <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badgeColor}">${j.state.toUpperCase()}</span>
                   </div>
                   <p class="text-xs text-slate-400 mt-1">${j.message || ''} • Dibuat: ${new Date(j.created_at * 1000).toLocaleString('id-ID')}</p>
                 </div>
                 <div class="flex items-center gap-2">
                   ${j.state === 'awaiting_selection' ? `
-                    <button onclick="openTopicSelectionModal('${j.id}')" class="px-3 py-1.5 bg-indigo-950 hover:bg-indigo-900 text-indigo-600 border border-indigo-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                    <button onclick="openTopicSelectionModal('${j.id}')" class="px-3 py-1.5 bg-indigo-950 hover:bg-indigo-900 text-indigo-400 border border-indigo-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Pilih Topik
                     </button>
-                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Batalkan
                     </button>
                   ` : ''}
                   ${isRunning ? `
-                    <button onclick="pauseJob('${j.id}')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                    <button onclick="pauseJob('${j.id}')" class="px-3 py-1.5 bg-amber-950 hover:bg-amber-900 text-amber-400 border border-amber-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="pause" class="w-3.5 h-3.5"></i> Jeda
                     </button>
-                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Batalkan
                     </button>
                   ` : ''}
                   ${isPaused ? `
-                    <button onclick="resumeJob('${j.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                    <button onclick="resumeJob('${j.id}')" class="px-3 py-1.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="play" class="w-3.5 h-3.5"></i> Lanjutkan
                     </button>
-                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
+                    <button onclick="cancelJob('${j.id}')" class="px-3 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-400 border border-rose-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
                       <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Batalkan
                     </button>
                   ` : ''}
                   ${isFailed ? `
-                    <button onclick="resumeJob('${j.id}')" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors" title="Ulangi Job">
+                    <button onclick="resumeJob('${j.id}')" class="px-3 py-1.5 bg-blue-950 hover:bg-blue-900 text-blue-400 border border-blue-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors" title="Ulangi Job">
                       <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Ulangi
                     </button>
                   ` : ''}
                   ${j.state === 'completed' ? `
-                    <button onclick="triggerExport('${j.id}')" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <button onclick="triggerExport('${j.id}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow">
                       <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Semua Klip
                     </button>
                   ` : ''}
-                  <button onclick="deleteJob('${j.id}')" class="px-3 py-2 bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors border border-slate-300" title="Hapus Proyek">
+                  <button onclick="deleteJob('${j.id}')" class="px-3 py-2 bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors border border-slate-700" title="Hapus Proyek">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
                   </button>
                 </div>
@@ -1468,7 +1560,7 @@
 
               <!-- Progress bar in History Card -->
               ${(isRunning || isPaused) ? `
-                <div class="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div class="space-y-1.5 bg-[#0B0F19] p-3 rounded-lg border border-slate-800">
                   <div class="flex items-center justify-between text-xs">
                     <span class="text-slate-400 font-medium">${j.message || 'Memproses...'}</span>
                     <div class="flex items-center gap-2">
@@ -1476,8 +1568,8 @@
                       <span class="font-bold text-emerald-400">${j.progress || 0}%</span>
                     </div>
                   </div>
-                  <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                    <div class="bg-emerald-700 h-2 rounded-full transition-all duration-300" style="width: ${j.progress || 0}%"></div>
+                  <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                    <div class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: ${j.progress || 0}%"></div>
                   </div>
                 </div>
               ` : ''}
@@ -1486,22 +1578,22 @@
               ${clips && clips.length > 0 ? `
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
                   ${clips.map((clip, idx) => `
-                    <div class="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-2 relative flex flex-col justify-between hover:border-slate-300 transition-colors">
+                    <div class="border border-slate-800/90 rounded-lg p-3 bg-[#0B0F19] space-y-2 relative flex flex-col justify-between hover:border-slate-700 transition-colors">
                       <div class="space-y-1.5">
                         <div class="flex items-center justify-between text-xs">
-                          <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                          <span class="font-bold text-white flex items-center gap-1.5">
                             <i data-lucide="film" class="w-3.5 h-3.5 text-emerald-400"></i> Klip #${idx + 1}
                           </span>
-                          <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 border border-emerald-800 rounded font-semibold text-[10px]">Viral: ${Math.round(clip.score)}</span>
+                          <span class="px-2 py-0.5 bg-emerald-950/80 text-emerald-400 border border-emerald-800 border border-emerald-800 rounded font-semibold text-[10px]">Viral: ${Math.round(clip.score)}</span>
                         </div>
                         <div class="flex items-center justify-between text-[11px] text-slate-400">
                           <span>⏱ Durasi: ${(clip.end_s - clip.start_s).toFixed(1)}s</span>
                           <span>📍 Detik ${Math.round(clip.start_s)} - ${Math.round(clip.end_s)}</span>
                         </div>
-                        ${clip.hook ? `<p class="text-xs text-slate-700 italic bg-white p-2 rounded border border-slate-200 line-clamp-2">"${clip.hook}"</p>` : ''}
+                        ${clip.hook ? `<p class="text-xs text-slate-300 italic bg-slate-900 p-2 rounded border border-slate-800 line-clamp-2">"${clip.hook}"</p>` : ''}
                       </div>
-                      <div class="pt-2 border-t border-slate-200/80 flex items-center gap-2">
-                        <button onclick="openClipInStudio('${j.id}', '${clip.id}')" class="flex-1 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-300 shadow-xs">
+                      <div class="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+                        <button onclick="openClipInStudio('${j.id}', '${clip.id}')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700">
                           <i data-lucide="sliders" class="w-3.5 h-3.5 text-emerald-400"></i> Buka di Studio
                         </button>
                       </div>
