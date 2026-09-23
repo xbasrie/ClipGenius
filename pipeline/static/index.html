@@ -182,7 +182,7 @@
 
               <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1.5">Aspek Rasio Video Target</label>
-                <select id="opt-ratio" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
+                <select id="opt-aspect" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
                   <option value="9:16" selected>9:16 Vertikal (TikTok / Shorts / Reels)</option>
                   <option value="16:9">16:9 Landscape (Original YouTube)</option>
                 </select>
@@ -206,7 +206,7 @@
 
               <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1.5">Preset Gaya Subtitle</label>
-                <select id="opt-style" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
+                <select id="opt-subtitle" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
                   <option value="bold_yellow" selected>Bold Yellow Pop (Kuning Tebal TikTok)</option>
                   <option value="karaoke">Karaoke Gradient (Highlight Kata)</option>
                   <option value="clean_white">Clean White (Klasik Minimalis)</option>
@@ -216,11 +216,11 @@
               <!-- Toggles -->
               <div class="space-y-2 pt-1">
                 <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                  <input type="checkbox" id="opt-use-yt-subs" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
+                  <input type="checkbox" id="opt-yt-subs" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
                   <span>Gunakan Subtitle YouTube (Bypass Cepat)</span>
                 </label>
                 <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                  <input type="checkbox" id="opt-tracking" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
+                  <input type="checkbox" id="opt-reframe" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
                   <span>Smart Face Tracking (Auto Crop ke Wajah Pembicara)</span>
                 </label>
               </div>
@@ -229,7 +229,7 @@
 
           <!-- Submit CTA -->
           <div class="pt-2 flex justify-end">
-            <button type="submit"
+            <button type="submit" id="btn-submit"
               class="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:shadow-emerald-900/40 transition-all flex items-center justify-center gap-2 text-sm">
               <i data-lucide="play" class="w-4 h-4 fill-current"></i>
               Mulai Ekstraksi & Kurasi AI
@@ -1350,30 +1350,43 @@
 
     async function handleCreateJob(e) {
       e.preventDefault();
-      const url = document.getElementById('input-url').value.trim();
-      const filePath = document.getElementById('input-file').value.trim();
+      try {
+        const urlInput = document.getElementById('input-url');
+        const fileInput = document.getElementById('input-file');
+        const url = urlInput ? urlInput.value.trim() : '';
+        const filePath = fileInput ? fileInput.value.trim() : '';
 
-      if (!url && !filePath) {
-        alert('Harap masukkan URL YouTube/TikTok atau path file lokal!');
-        return;
-      }
+        if (!url && !filePath) {
+          alert('Harap masukkan URL YouTube/TikTok atau path file lokal!');
+          return;
+        }
 
-      const payload = {
-        url: url || null,
-        file_path: filePath || null,
-        clip_max_s: parseInt(document.getElementById('opt-duration').value),
-        clip_count: parseInt(document.getElementById('opt-count').value),
-        model_tier: document.getElementById('opt-stt').value,
-        aspect: document.getElementById('opt-aspect').value,
-        subtitle_preset: document.getElementById('opt-subtitle').value,
-        reframe: document.getElementById('opt-reframe').checked,
-        use_youtube_subs: document.getElementById('opt-yt-subs').checked
-      };
+        const durEl = document.getElementById('opt-duration');
+        const countEl = document.getElementById('opt-count');
+        const sttEl = document.getElementById('opt-stt');
+        const aspectEl = document.getElementById('opt-aspect') || document.getElementById('opt-ratio');
+        const subPresetEl = document.getElementById('opt-subtitle') || document.getElementById('opt-style');
+        const reframeEl = document.getElementById('opt-reframe') || document.getElementById('opt-tracking');
+        const ytSubsEl = document.getElementById('opt-yt-subs') || document.getElementById('opt-use-yt-subs');
 
-      const btn = document.getElementById('btn-submit');
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Mengantrekan Job...`;
-      lucide.createIcons();
+        const payload = {
+          url: url || null,
+          file_path: filePath || null,
+          clip_max_s: durEl ? parseInt(durEl.value) : 30,
+          clip_count: countEl ? parseInt(countEl.value) : 5,
+          model_tier: sttEl ? sttEl.value : 'fast',
+          aspect: aspectEl ? aspectEl.value : '9:16',
+          subtitle_preset: subPresetEl ? subPresetEl.value : 'bold_yellow',
+          reframe: reframeEl ? reframeEl.checked : true,
+          use_youtube_subs: ytSubsEl ? ytSubsEl.checked : true
+        };
+
+        const btn = document.getElementById('btn-submit');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Mengantrekan Job...`;
+          lucide.createIcons();
+        }
 
       try {
         const res = await fetch(API_BASE + '/jobs', {
@@ -1389,11 +1402,14 @@
           alert('Gagal membuat job: ' + JSON.stringify(data));
         }
       } catch (err) {
-        alert('Error: ' + err.message);
+        alert('Error membuat klip: ' + err.message);
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i> Mulai Proses Otomatis`;
-        lucide.createIcons();
+        const btn = document.getElementById('btn-submit');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i> Mulai Ekstraksi & Kurasi AI`;
+          lucide.createIcons();
+        }
       }
     }
 
