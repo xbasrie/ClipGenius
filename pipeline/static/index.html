@@ -57,7 +57,7 @@
           <i data-lucide="sparkles" class="w-4 h-4"></i> Buat Klip Baru
         </button>
         <button onclick="switchTab('editor')" id="tab-editor" class="tab-btn border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700 py-3 px-1 text-sm font-semibold flex items-center gap-2">
-          <i data-lucide="video" class="w-4 h-4"></i> Studio Editor (CapCut Style)
+          <i data-lucide="video" class="w-4 h-4"></i> Studio Editor
         </button>
         <button onclick="switchTab('jobs')" id="tab-jobs" class="tab-btn border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700 py-3 px-1 text-sm font-semibold flex items-center gap-2">
           <i data-lucide="layers" class="w-4 h-4"></i> Riwayat Proyek & Klip
@@ -259,8 +259,12 @@
             </select>
           </div>
 
-          <button onclick="saveClipEdits()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
-            <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Penyesuaian
+          <button onclick="saveClipEdits()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
+            <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-400"></i> Simpan
+          </button>
+
+          <button onclick="exportCurrentStudioClip()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Video
           </button>
         </div>
       </div>
@@ -868,6 +872,32 @@
       }
     }
 
+    async function exportCurrentStudioClip() {
+      if (!activeEditingClip || !studioSelectedJobId) {
+        alert('Pilih klip terlebih dahulu untuk diekspor!');
+        return;
+      }
+      const outDir = prompt('Masukkan folder tujuan ekspor di komputer Anda:', 'C:\\Users\\elbasrie\\Videos\\ClipGenius_Export');
+      if (!outDir) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/jobs/${studioSelectedJobId}/export`, {
+          method: 'POST',
+          headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            output_dir: outDir,
+            clip_ids: [activeEditingClip.id],
+            aspect: '9:16',
+            resolution: '1080p'
+          })
+        });
+        const data = await res.json();
+        alert(`Sukses! Klip "${activeEditingClip.title || activeEditingClip.id}" berhasil diekspor ke:\n${outDir}`);
+      } catch (err) {
+        alert('Gagal export: ' + err.message);
+      }
+    }
+
     function formatSeconds(s) {
       if (isNaN(s)) return "00:00";
       const m = Math.floor(s / 60);
@@ -1207,22 +1237,29 @@
                 </div>
               ` : ''}
 
-              <!-- Clips Grid -->
+              <!-- Clips Grid (Compact List - Video Preview Hidden) -->
               ${clips && clips.length > 0 ? `
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
                   ${clips.map((clip, idx) => `
-                    <div class="border border-slate-800 rounded-lg p-3 bg-slate-950 space-y-2 relative">
-                      <div class="aspect-[9/16] bg-black rounded-md overflow-hidden relative group flex items-center justify-center">
-                        <video src="${API_BASE}/media/${j.id}/${clip.file.split(/[\\/]/).pop()}?token=dev-local-token" controls playsinline class="w-full h-full object-cover"></video>
+                    <div class="border border-slate-800 rounded-lg p-3 bg-slate-950 space-y-2 relative flex flex-col justify-between">
+                      <div class="space-y-1.5">
+                        <div class="flex items-center justify-between text-xs">
+                          <span class="font-bold text-white flex items-center gap-1.5">
+                            <i data-lucide="film" class="w-3.5 h-3.5 text-emerald-400"></i> Klip #${idx + 1}
+                          </span>
+                          <span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded font-semibold text-[10px]">Viral: ${Math.round(clip.score)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-400">
+                          <span>⏱ Durasi: ${(clip.end_s - clip.start_s).toFixed(1)}s</span>
+                          <span>📍 Detik ${Math.round(clip.start_s)} - ${Math.round(clip.end_s)}</span>
+                        </div>
+                        ${clip.hook ? `<p class="text-xs text-slate-300 italic bg-slate-900 p-2 rounded border border-slate-800 line-clamp-2">"${clip.hook}"</p>` : ''}
                       </div>
-                      <div class="flex items-center justify-between text-xs pt-1">
-                        <span class="font-bold text-white">Klip #${idx + 1} (${Math.round(clip.end_s - clip.start_s)}s)</span>
-                        <span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded font-semibold text-[10px]">Viral: ${Math.round(clip.score)}</span>
+                      <div class="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+                        <button onclick="openClipInStudio('${j.id}', '${clip.id}')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-slate-700">
+                          <i data-lucide="sliders" class="w-3.5 h-3.5 text-emerald-400"></i> Buka di Studio
+                        </button>
                       </div>
-                      ${clip.hook ? `<p class="text-xs text-slate-300 italic bg-slate-900 p-2 rounded border border-slate-800">"${clip.hook}"</p>` : ''}
-                      <button onclick="openClipInStudio('${j.id}', '${clip.id}')" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm border border-slate-700">
-                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-emerald-400"></i> Buka di Studio Editor
-                      </button>
                     </div>
                   `).join('')}
                 </div>
