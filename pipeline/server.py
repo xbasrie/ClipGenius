@@ -46,11 +46,13 @@ STAGES = ["download", "transcribe", "curate", "clip", "subtitle", "review"]
 def require_token(request: Request, x_clipgenius_token: str = Header(default="")) -> None:
     if not TOKEN:
         return
-    # Public routes for browser / health check / docs
-    if request.url.path in ("/", "/health", "/docs", "/openapi.json", "/favicon.ico"):
+    # Public routes for browser / health check / docs / media streaming
+    if request.url.path in ("/", "/health", "/docs", "/openapi.json", "/favicon.ico") or request.url.path.startswith("/media/"):
         return
-    if x_clipgenius_token != TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid or missing sidecar token")
+    token_param = request.query_params.get("token", "")
+    if x_clipgenius_token == TOKEN or token_param == TOKEN:
+        return
+    raise HTTPException(status_code=401, detail="Invalid or missing sidecar token")
 
 
 app = FastAPI(title="ClipGenius Sidecar", version="0.1.0", dependencies=[Depends(require_token)])
