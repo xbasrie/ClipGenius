@@ -8,5 +8,8 @@ fixtures/smoke_out/
 *.log
 desktop/node_modules/
 desktop/dist/
+dist/
+build/
+*.spec
 .DS_Store
 Thumbs.db

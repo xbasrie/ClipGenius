@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Comic+Neue:wght@700&family=Inter:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body {
@@ -20,6 +20,29 @@
     }
     .card-shadow-lg {
       box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
+    }
+
+    /* Custom sleek modern scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+      border: 1px solid #1e293b;
+      transition: background 0.2s ease;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #10b981;
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #334155 #090d16;
     }
   </style>
 </head>
@@ -288,6 +311,11 @@
             <video id="editor-video-player" class="w-full h-full object-contain" controls playsinline>
               <source id="editor-video-source" src="" type="video/mp4">
             </video>
+            <!-- Live Hook Overlay Preview (Top) -->
+            <div id="editor-hook-overlay" class="absolute top-5 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20 hidden">
+              <span id="editor-hook-text" class="inline-block px-3 py-1.5 rounded-lg font-black tracking-tight text-white bg-black/75 backdrop-blur-sm border border-white/20 text-xs uppercase shadow-xl drop-shadow-md max-w-[92%] break-words">
+              </span>
+            </div>
             <!-- Live Subtitle Overlay Preview -->
             <div id="editor-sub-overlay" class="absolute bottom-16 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20">
               <span id="editor-sub-text" class="px-2.5 py-1 rounded font-black tracking-tight leading-tight uppercase drop-shadow-md text-yellow-300 text-sm">
@@ -304,15 +332,51 @@
             <p class="text-[11px] text-slate-500">Sesuaikan font, warna teks, background opsional, dan posisi.</p>
           </div>
 
-          <!-- Font Family -->
-          <div class="space-y-1.5">
-            <label class="text-[11px] font-semibold text-slate-400 uppercase">Jenis Font</label>
-            <select id="sub-font-family" onchange="updateLiveSubtitlePreview()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
-              <option value="'Montserrat', sans-serif">Montserrat (Creator Populer)</option>
-              <option value="'Impact', sans-serif">Impact / Bold Hook</option>
-              <option value="'Inter', sans-serif">Inter (Clean Modern)</option>
-              <option value="'Comic Sans MS', cursive">Komika / Playful</option>
-            </select>
+          <!-- Font Family with Visual Typography Preview -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Pilihan Font & Contoh</label>
+              <span id="active-font-name" class="text-[10px] text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">Montserrat</span>
+            </div>
+            <input type="hidden" id="sub-font-family" value="'Montserrat', sans-serif">
+            
+            <div class="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-1" id="font-cards-container">
+              <button type="button" onclick="selectFontFamily(`'Montserrat', sans-serif`, 'Montserrat', this)"
+                class="font-card active-font text-left p-2 rounded-lg border border-emerald-500 bg-emerald-950/40 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400 font-medium">Montserrat</span>
+                <span class="text-xs font-black text-white truncate" style="font-family: 'Montserrat', sans-serif;">VIRAL HOOK</span>
+              </button>
+              <button type="button" onclick="selectFontFamily(`'Impact', sans-serif`, 'Impact', this)"
+                class="font-card text-left p-2 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400 font-medium">Impact</span>
+                <span class="text-xs text-white truncate" style="font-family: 'Impact', sans-serif; letter-spacing: 0.5px;">BOLD IMPACT</span>
+              </button>
+              <button type="button" onclick="selectFontFamily(`'Bebas Neue', sans-serif`, 'Bebas Neue', this)"
+                class="font-card text-left p-2 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400 font-medium">Bebas Neue</span>
+                <span class="text-sm text-white truncate" style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 1px;">SHORTS TITLE</span>
+              </button>
+              <button type="button" onclick="selectFontFamily(`'Anton', sans-serif`, 'Anton', this)"
+                class="font-card text-left p-2 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400 font-medium">Anton</span>
+                <span class="text-xs text-white truncate" style="font-family: 'Anton', sans-serif;">TRENDING</span>
+              </button>
+              <button type="button" onclick="selectFontFamily(`'Poppins', sans-serif`, 'Poppins', this)"
+                class="font-card text-left p-2 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400 font-medium">Poppins</span>
+                <span class="text-xs font-bold text-white truncate" style="font-family: 'Poppins', sans-serif;">Dynamic Bold</span>
+              </button>
+              <button type="button" onclick="selectFontFamily(`'Inter', sans-serif`, 'Inter', this)"
+                class="font-card text-left p-2 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5">
+                <span class="text-[10px] text-slate-400 font-medium">Inter</span>
+                <span class="text-xs font-bold text-white truncate" style="font-family: 'Inter', sans-serif;">Clean Modern</span>
+              </button>
+              <button type="button" onclick="selectFontFamily(`'Comic Neue', 'Comic Sans MS', cursive`, 'Komika', this)"
+                class="font-card text-left p-2 rounded-lg border border-slate-800 bg-slate-950 hover:bg-slate-800/80 transition-all flex flex-col gap-0.5 col-span-2">
+                <span class="text-[10px] text-slate-400 font-medium">Komika / Playful</span>
+                <span class="text-xs font-bold text-white truncate" style="font-family: 'Comic Neue', cursive;">Casual & Fun Comedy</span>
+              </button>
+            </div>
           </div>
 
           <!-- Colors & Background Toggle -->
@@ -359,8 +423,12 @@
 
           <!-- Hook Title Input -->
           <div class="space-y-1.5 pt-2 border-t border-slate-800">
-            <label class="text-[11px] font-semibold text-slate-400 uppercase">Teks Hook Atas</label>
-            <input type="text" id="editor-hook-input" placeholder="Misal: RAHASIA MENARIK..." class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-semibold text-slate-400 uppercase">Teks Hook Atas (Header Video)</label>
+              <span class="text-[9px] text-emerald-400 font-medium">Pratinjau Live di Atas</span>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-tight">Judul atau hook penarik atensi di bagian atas video (otomatis ditempel saat export).</p>
+            <input type="text" id="editor-hook-input" oninput="updateLiveSubtitlePreview()" placeholder="Misal: CARA CEPAT KAYA 🤯" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
           </div>
         </div>
       </div>
@@ -774,6 +842,20 @@
           video.currentTime = (pct / 100) * dur;
         };
 
+        if (clip.subtitle_style) {
+          const s = clip.subtitle_style;
+          if (s.font) {
+            const fontCard = Array.from(document.querySelectorAll('.font-card')).find(c => c.getAttribute('onclick') && c.getAttribute('onclick').includes(s.font));
+            const name = s.font.split(',')[0].replace(/['"]/g, '');
+            selectFontFamily(s.font, name, fontCard);
+          }
+          if (s.color) document.getElementById('sub-color-text').value = s.color;
+          if (s.enable_bg !== undefined) document.getElementById('sub-bg-enable').checked = s.enable_bg;
+          if (s.bg) document.getElementById('sub-color-bg').value = s.bg;
+          if (s.size) document.getElementById('sub-font-size').value = s.size;
+          if (s.pos_y) document.getElementById('sub-pos-y').value = s.pos_y;
+        }
+
         updateLiveSubtitlePreview();
       } catch (err) {
         alert('Gagal membuka editor: ' + err.message);
@@ -809,6 +891,22 @@
       }
     }
 
+    function selectFontFamily(fontVal, fontName, btn) {
+      document.getElementById('sub-font-family').value = fontVal;
+      const label = document.getElementById('active-font-name');
+      if (label) label.innerText = fontName;
+
+      document.querySelectorAll('.font-card').forEach(c => {
+        c.classList.remove('border-emerald-500', 'bg-emerald-950/40');
+        c.classList.add('border-slate-800', 'bg-slate-950');
+      });
+      if (btn) {
+        btn.classList.remove('border-slate-800', 'bg-slate-950');
+        btn.classList.add('border-emerald-500', 'bg-emerald-950/40');
+      }
+      updateLiveSubtitlePreview();
+    }
+
     function updateLiveSubtitlePreview() {
       const font = document.getElementById('sub-font-family').value;
       const colorText = document.getElementById('sub-color-text').value;
@@ -830,6 +928,7 @@
         bgPickerContainer.classList.add('opacity-40', 'pointer-events-none');
       }
 
+      // Live Subtitle Overlay
       const overlay = document.getElementById('editor-sub-overlay');
       const textSpan = document.getElementById('editor-sub-text');
 
@@ -847,6 +946,20 @@
         textSpan.style.backgroundColor = 'transparent';
         textSpan.style.padding = '0';
         textSpan.style.border = 'none';
+      }
+
+      // Live Hook Overlay Preview (Top Banner)
+      const hookInput = document.getElementById('editor-hook-input');
+      const hookOverlay = document.getElementById('editor-hook-overlay');
+      const hookText = document.getElementById('editor-hook-text');
+      if (hookInput && hookOverlay && hookText) {
+        const val = hookInput.value.trim();
+        if (val) {
+          hookText.innerText = val.toUpperCase();
+          hookOverlay.classList.remove('hidden');
+        } else {
+          hookOverlay.classList.add('hidden');
+        }
       }
     }
 
@@ -1177,6 +1290,7 @@
           const isRunning = j.state === 'processing' || j.state === 'queued';
           const isPaused = j.state === 'paused';
           const isFailed = j.state === 'failed';
+          const histETA = calculateETA(j.id, j.progress || 0, !isRunning);
 
           html += `
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 card-shadow space-y-4">

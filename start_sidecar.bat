@@ -5,6 +5,9 @@ cd /d "%~dp0"
 echo [ClipGenius] Starting sidecar...
 set CLIPGENIUS_TOKEN=dev-local-token
 set CLIPGENIUS_PORT=8089
+if exist "D:\" (
+    set CLIPGENIUS_HOME=D:\clipgenius_data
+)
 
 if not exist ".venv\Scripts\python.exe" (
     echo Error: .venv not found. Run scripts\setup.bat first.

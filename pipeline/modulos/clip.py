@@ -23,12 +23,35 @@ VERTICAL_H = 1920
 _CASCADE = None
 
 
-def _cascade() -> cv2.CascadeClassifier:
+def _cascade() -> cv2.CascadeClassifier | None:
     global _CASCADE
-    if _CASCADE is None:
-        path = Path(cv2.data.haarcascades) / "haarcascade_frontalface_default.xml"
-        _CASCADE = cv2.CascadeClassifier(str(path))
-    return _CASCADE
+    if _CASCADE is not None:
+        return _CASCADE
+
+    import sys
+    candidates = [
+        Path(getattr(cv2.data, "haarcascades", "")) / "haarcascade_frontalface_default.xml",
+        Path(__file__).resolve().parent.parent.parent / "resources" / "haarcascades" / "haarcascade_frontalface_default.xml",
+        Path(sys.executable).parent / "_internal" / "cv2" / "data" / "haarcascade_frontalface_default.xml",
+        Path(sys.executable).parent / "cv2" / "data" / "haarcascade_frontalface_default.xml",
+        Path(sys.executable).parent / "resources" / "haarcascades" / "haarcascade_frontalface_default.xml",
+    ]
+    if hasattr(sys, "_MEIPASS"):
+        candidates.extend([
+            Path(sys._MEIPASS) / "cv2" / "data" / "haarcascade_frontalface_default.xml",
+            Path(sys._MEIPASS) / "resources" / "haarcascades" / "haarcascade_frontalface_default.xml",
+        ])
+
+    for p in candidates:
+        if p and p.exists():
+            cas = cv2.CascadeClassifier(str(p))
+            if not cas.empty():
+                _CASCADE = cas
+                return _CASCADE
+
+    logger.warning("Haar cascade XML not found in candidates, face tracking disabled")
+    return None
+
 
 
 # --------------------------------------------------------------------------- camera
@@ -138,10 +161,16 @@ class SpeakerTracker:
 
 
 def detect_faces(frame) -> list[tuple[int, int, int, int]]:
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = _cascade().detectMultiScale(gray, scaleFactor=1.15, minNeighbors=6,
-                                        minSize=(60, 60))
-    return [tuple(int(v) for v in f) for f in faces]
+    cas = _cascade()
+    if cas is None or cas.empty():
+        return []
+    try:
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = cas.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=6, minSize=(60, 60))
+        return [tuple(int(v) for v in f) for f in faces]
+    except Exception as e:
+        logger.warning("Face detection failed: %s", e)
+        return []
 
 
 def blurred_general_frame(frame, out_w: int, out_h: int):

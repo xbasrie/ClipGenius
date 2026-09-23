@@ -121,11 +121,14 @@ def get_video_info(url: str) -> dict:
         "--dump-json", "--no-playlist", "--skip-download", url
     ]
     raw = _run(cmd, timeout_s=120)
-    line = raw.strip().splitlines()[0]
+    lines = [ln.strip() for ln in raw.strip().splitlines() if ln.strip()]
+    if not lines:
+        raise MediaError(f"yt-dlp returned empty output for {url}")
+    json_line = next((ln for ln in lines if ln.startswith("{") and ln.endswith("}")), lines[0])
     try:
-        data = json.loads(line)
+        data = json.loads(json_line)
     except json.JSONDecodeError as e:
-        raise MediaError(f"yt-dlp --dump-json returned invalid JSON for {url}") from e
+        raise MediaError(f"yt-dlp --dump-json returned invalid JSON for {url}: {json_line[:200]}") from e
     return {
         "title": data.get("title") or "",
         "duration": float(data.get("duration") or 0.0),

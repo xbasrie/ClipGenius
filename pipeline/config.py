@@ -39,10 +39,24 @@ def ensure_dirs() -> None:
 
 
 def _bundled(name: str) -> str | None:
-    """Prefer bundled binary in resources/bin, else PATH."""
-    for candidate in (BIN_DIR / f"{name}.exe", BIN_DIR / name):
-        if candidate.exists():
-            return str(candidate)
+    """Prefer bundled binary in resources/bin, next to exe, else PATH."""
+    import sys
+    base_dirs = [
+        BIN_DIR,
+        Path(__file__).resolve().parent.parent / "resources" / "bin",
+        Path(sys.executable).parent / "resources" / "bin",
+        Path(sys.executable).parent,
+    ]
+    if hasattr(sys, "_MEIPASS"):
+        base_dirs.extend([
+            Path(sys._MEIPASS) / "resources" / "bin",
+            Path(sys._MEIPASS) / "bin",
+            Path(sys._MEIPASS),
+        ])
+    for bdir in base_dirs:
+        for candidate in (bdir / f"{name}.exe", bdir / name):
+            if candidate.exists():
+                return str(candidate)
     return shutil.which(name)
 
 
@@ -55,13 +69,30 @@ def ffprobe() -> str:
 
 
 def ytdlp() -> list[str]:
-    """yt-dlp invocation: bundled exe, else python module (no separate install needed)."""
+    """yt-dlp invocation: bundled exe, venv scripts, else python module."""
     exe = _bundled("yt-dlp")
     if exe:
         return [exe]
     import sys
 
-    return [sys.executable, "-m", "yt_dlp"]
+    # Check venv or local scripts
+    candidates = [
+        Path(__file__).resolve().parent.parent / ".venv" / "Scripts" / "yt-dlp.exe",
+        Path.home() / "clipgenius" / ".venv" / "Scripts" / "yt-dlp.exe",
+    ]
+    for c in candidates:
+        if c.exists():
+            return [str(c)]
+
+    if not getattr(sys, "frozen", False):
+        return [sys.executable, "-m", "yt_dlp"]
+
+    py = shutil.which("python") or shutil.which("python3")
+    if py:
+        return [py, "-m", "yt_dlp"]
+
+    return ["yt-dlp"]
+
 
 
 STT_MODELS = {
