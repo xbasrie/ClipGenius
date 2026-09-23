@@ -477,12 +477,24 @@ def patch_clip(clip_id: str, payload: ClipPatch) -> dict:
     if fields:
         db.update_clip(clip_id, **fields)
 
-    stored = db.one("SELECT subtitle FROM clips WHERE id=?", (clip_id,))
+    stored = db.one("SELECT * FROM clips WHERE id=?", (clip_id,))
+    if not stored:
+        raise HTTPException(404, "Klip tidak ditemukan")
+
     sub = json.loads(stored["subtitle"]) if stored and stored["subtitle"] else {}
     if preset:
         sub["preset"] = preset
     if style:
         sub["style"] = style
+        offset_s = float(style.get("offset_s", 0.0))
+        srt_path = sub.get("srt")
+        if srt_path and stored.get("transcript"):
+            try:
+                tc = {"segments": json.loads(stored["transcript"])}
+                sub_mod.generate_srt(tc, stored["start_s"], stored["end_s"], srt_path, time_offset=offset_s)
+            except Exception as e:
+                logger.warning("Failed to regenerate SRT with offset: %s", e)
+
     if edits is not None:
         srt = sub.get("srt")
         if srt and Path(srt).exists():
@@ -490,10 +502,63 @@ def patch_clip(clip_id: str, payload: ClipPatch) -> dict:
     if preset or style or edits is not None:
         db.update_clip(clip_id, subtitle=sub)
 
+    return {"ok": True}
+
+
+@app.post("/clips/{clip_id}/retranscribe")
+def retranscribe_clip(clip_id: str) -> dict:
+    """Run local Whisper STT directly on the cut clip video/audio to get 100% sync."""
     row = db.one("SELECT * FROM clips WHERE id=?", (clip_id,))
     if not row:
         raise HTTPException(404, "Klip tidak ditemukan")
-    return {"ok": True}
+    clip_file = Path(row["file"])
+    if not clip_file.exists():
+        raise HTTPException(400, "File video klip tidak ditemukan di disk")
+
+    logger.info("Retranscribing clip %s via local Whisper STT...", clip_id)
+    res = stt.transcribe(str(clip_file), model_tier="fast", language="id")
+    segments = res.get("segments", [])
+    if not segments:
+        raise HTTPException(500, "Whisper tidak menghasilkan transkrip")
+
+    start_s = float(row["start_s"])
+    end_s = float(row["end_s"])
+    abs_segments = []
+    for s in segments:
+        s_words = []
+        for w in s.get("words", []):
+            s_words.append({
+                "word": str(w.get("word", "")).strip(),
+                "start": round(start_s + float(w["start"]), 3),
+                "end": round(start_s + float(w["end"]), 3),
+                "probability": float(w.get("probability", 1.0)),
+            })
+        abs_segments.append({
+            "start": round(start_s + float(s["start"]), 3),
+            "end": round(start_s + float(s["end"]), 3),
+            "text": str(s.get("text", "")).strip(),
+            "words": s_words,
+        })
+
+    db.update_clip(clip_id, transcript=abs_segments)
+
+    sub = json.loads(row["subtitle"]) if row["subtitle"] else {}
+    srt_path = sub.get("srt")
+    if not srt_path:
+        srt_path = str(clip_file.parent / f"clip_{row['idx']}.srt")
+        sub["srt"] = srt_path
+
+    tc = {"segments": abs_segments}
+    offset_s = float(sub.get("style", {}).get("offset_s", 0.0))
+    sub_mod.generate_srt(tc, start_s, end_s, srt_path, time_offset=offset_s)
+    db.update_clip(clip_id, subtitle=sub)
+
+    return {
+        "ok": True,
+        "transcript": abs_segments,
+        "srt_path": srt_path,
+        "message": f"Berhasil ditranskripsi ulang ({len(abs_segments)} baris kalimat)!"
+    }
 
 
 def _apply_subtitle_edits(srt_path: Path, edits: list[dict]) -> None:

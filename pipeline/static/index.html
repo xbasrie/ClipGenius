@@ -425,6 +425,33 @@
             <input type="range" id="sub-pos-y" min="5" max="85" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500">
           </div>
 
+          <!-- Subtitle Time Offset Slider (Sync Timing) -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-800">
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span class="font-semibold uppercase flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3 text-emerald-400"></i> Offset / Geser Waktu</span>
+              <span id="sub-offset-s-val" class="font-mono text-emerald-400 font-bold">0.00s (Pas)</span>
+            </div>
+            <p class="text-[10px] text-slate-500 leading-tight">Geser jika subtitle mendahului (-) atau telat (+) dari vokal audio.</p>
+            <input type="range" id="sub-offset-s" min="-3.0" max="3.0" value="0.0" step="0.05" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+            <div class="grid grid-cols-5 gap-1 pt-1">
+              <button type="button" onclick="setSubOffset(-0.5)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">-0.5s</button>
+              <button type="button" onclick="setSubOffset(-0.2)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">-0.2s</button>
+              <button type="button" onclick="setSubOffset(0.0)" class="px-1.5 py-1 text-[10px] font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-400 font-bold rounded">0s</button>
+              <button type="button" onclick="setSubOffset(0.2)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">+0.2s</button>
+              <button type="button" onclick="setSubOffset(0.5)" class="px-1.5 py-1 text-[10px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-300 rounded">+0.5s</button>
+            </div>
+          </div>
+
+          <!-- Whisper Retranscribe Clip Button -->
+          <div class="pt-2 border-t border-slate-800">
+            <button type="button" onclick="retranscribeCurrentClip()" id="btn-retranscribe-clip"
+              class="w-full py-2 px-3 bg-slate-800 hover:bg-indigo-950/60 border border-slate-700 hover:border-indigo-500 text-slate-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Sinkron Ulang via Whisper AI</span>
+            </button>
+            <p class="text-[9px] text-slate-500 mt-1 leading-tight text-center">Transkripsi offline langsung dari audio klip ini untuk hasil pas 100%.</p>
+          </div>
+
           <!-- Hook Title Input -->
           <div class="space-y-1.5 pt-2 border-t border-slate-800">
             <div class="flex items-center justify-between">
@@ -820,8 +847,8 @@
 
         // Subtitle & Transkrip setup
         const transcript = clip.transcript || [];
-        editingTranscriptWords = transcript;
-        renderStudioTranscript(transcript);
+        editingTranscriptWords = flattenTranscriptToWords(transcript);
+        renderStudioTranscript(editingTranscriptWords);
 
         // Timeline timecode listener
         video.ontimeupdate = () => {
@@ -830,12 +857,13 @@
           document.getElementById('timeline-timecode').innerText = `${formatSeconds(cur)} / ${formatSeconds(dur)}`;
           document.getElementById('timeline-scrubber').value = (cur / dur) * 100;
 
-          // Find active subtitle text
+          // Find active subtitle text with offset
           if (editingTranscriptWords && editingTranscriptWords.length) {
-            const relCur = clip.start_s + cur;
+            const offset = parseFloat(document.getElementById('sub-offset-s').value || 0);
+            const relCur = clip.start_s + cur - offset;
             const activeWord = editingTranscriptWords.find(w => relCur >= w.start && relCur <= w.end);
             if (activeWord) {
-              document.getElementById('editor-sub-text').innerText = activeWord.text.toUpperCase();
+              document.getElementById('editor-sub-text').innerText = (activeWord.text || activeWord.word || '').toUpperCase();
             }
           }
         };
@@ -858,6 +886,9 @@
           if (s.bg) document.getElementById('sub-color-bg').value = s.bg;
           if (s.size) document.getElementById('sub-font-size').value = s.size;
           if (s.pos_y) document.getElementById('sub-pos-y').value = s.pos_y;
+          if (s.offset_s !== undefined) document.getElementById('sub-offset-s').value = s.offset_s;
+        } else {
+          document.getElementById('sub-offset-s').value = 0.0;
         }
 
         updateLiveSubtitlePreview();
@@ -866,10 +897,37 @@
       }
     }
 
+    function flattenTranscriptToWords(transcript) {
+      if (!transcript || !transcript.length) return [];
+      const words = [];
+      transcript.forEach(item => {
+        if (item.words && item.words.length) {
+          item.words.forEach(w => words.push({
+            text: w.word || w.text || '',
+            start: parseFloat(w.start),
+            end: parseFloat(w.end)
+          }));
+        } else if (item.text) {
+          words.push({
+            text: item.text,
+            start: parseFloat(item.start),
+            end: parseFloat(item.end)
+          });
+        } else if (item.word) {
+          words.push({
+            text: item.word,
+            start: parseFloat(item.start),
+            end: parseFloat(item.end)
+          });
+        }
+      });
+      return words;
+    }
+
     function renderStudioTranscript(words) {
       const container = document.getElementById('editor-transcript-list');
       container.innerHTML = '';
-      document.getElementById('editor-word-count').innerText = `${words.length} kata`;
+      document.getElementById('editor-word-count').innerText = `${words.length} item`;
 
       if (!words || !words.length) {
         container.innerHTML = '<div class="text-slate-500 text-center py-10">Tidak ada data kata subtitle.</div>';
@@ -878,11 +936,11 @@
 
       words.forEach((w, idx) => {
         const item = document.createElement('div');
-        item.className = "p-2 rounded bg-slate-800 border border-slate-700 flex items-center justify-between gap-2";
+        item.className = "p-2 rounded bg-slate-800/80 border border-slate-700/80 flex items-center justify-between gap-2 hover:border-slate-600 transition-colors";
         item.innerHTML = `
           <input type="text" value="${w.text}" onchange="updateTranscriptWord(${idx}, this.value)"
-            class="bg-transparent border-b border-transparent focus:border-emerald-400 text-xs text-white font-medium outline-none flex-1">
-          <span class="text-[10px] text-slate-500 font-mono">${w.start.toFixed(1)}s</span>
+            class="bg-transparent border-b border-transparent focus:border-emerald-400 text-xs text-white font-medium outline-none flex-1 truncate">
+          <span class="text-[10px] text-slate-400 font-mono shrink-0">${w.start ? w.start.toFixed(1) + 's' : ''}</span>
         `;
         container.appendChild(item);
       });
@@ -892,6 +950,42 @@
       if (editingTranscriptWords[index]) {
         editingTranscriptWords[index].text = newText;
         document.getElementById('editor-sub-text').innerText = newText.toUpperCase();
+      }
+    }
+
+    function setSubOffset(val) {
+      document.getElementById('sub-offset-s').value = val;
+      updateLiveSubtitlePreview();
+    }
+
+    async function retranscribeCurrentClip() {
+      if (!activeEditingClip) return;
+      const btn = document.getElementById('btn-retranscribe-clip');
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Mentranskripsi Audio Klip...</span>`;
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`${API_BASE}/clips/${activeEditingClip.id}/retranscribe`, {
+          method: 'POST',
+          headers: AUTH_HEADER
+        });
+        const d = await res.json();
+        if (d.ok) {
+          activeEditingClip.transcript = d.transcript;
+          editingTranscriptWords = flattenTranscriptToWords(d.transcript);
+          renderStudioTranscript(editingTranscriptWords);
+          alert(d.message || 'Transkripsi ulang klip via Whisper berhasil!');
+        } else {
+          alert('Gagal transkripsi ulang: ' + (d.detail || d.message));
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        lucide.createIcons();
       }
     }
 
@@ -923,6 +1017,23 @@
       document.getElementById('sub-color-bg-val').innerText = colorBg.toUpperCase();
       document.getElementById('sub-font-size-val').innerText = `${size}px`;
       document.getElementById('sub-pos-y-val').innerText = `${posY}%`;
+
+      // Live Offset label update
+      const offsetInput = document.getElementById('sub-offset-s');
+      const offsetVal = document.getElementById('sub-offset-s-val');
+      if (offsetInput && offsetVal) {
+        const off = parseFloat(offsetInput.value);
+        if (off === 0) {
+          offsetVal.innerText = '0.00s (Pas)';
+          offsetVal.className = 'font-mono text-emerald-400 font-bold';
+        } else if (off < 0) {
+          offsetVal.innerText = `${off.toFixed(2)}s (Maju / Lebih Cepat)`;
+          offsetVal.className = 'font-mono text-cyan-400 font-bold';
+        } else {
+          offsetVal.innerText = `+${off.toFixed(2)}s (Mundur / Lebih Lambat)`;
+          offsetVal.className = 'font-mono text-amber-400 font-bold';
+        }
+      }
 
       // Toggle background picker opacity
       const bgPickerContainer = document.getElementById('sub-bg-color-picker');
@@ -976,7 +1087,8 @@
         enable_bg: document.getElementById('sub-bg-enable').checked,
         bg: document.getElementById('sub-bg-enable').checked ? document.getElementById('sub-color-bg').value : null,
         size: document.getElementById('sub-font-size').value,
-        pos_y: document.getElementById('sub-pos-y').value
+        pos_y: document.getElementById('sub-pos-y').value,
+        offset_s: parseFloat(document.getElementById('sub-offset-s').value || 0)
       };
 
       try {

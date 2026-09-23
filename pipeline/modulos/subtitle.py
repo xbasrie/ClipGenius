@@ -155,7 +155,7 @@ def format_srt_block(index: int, start: float, end: float, text: str) -> str:
 
 
 def _cues(transcript: dict, clip_start: float, clip_end: float,
-          max_chars: int, max_duration: float) -> list[tuple[float, float, str]]:
+          max_chars: int, max_duration: float, time_offset: float = 0.0) -> list[tuple[float, float, str]]:
     """Word stream inside the clip window -> short relative-time cues."""
     words: list[dict] = []
     for seg in transcript.get("segments") or []:
@@ -188,8 +188,8 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
         if not text:
             line.clear()
             return
-        start = line[0]["start"] - clip_start
-        end = line[-1]["end"] - clip_start
+        start = line[0]["start"] - clip_start + time_offset
+        end = line[-1]["end"] - clip_start + time_offset
         line.clear()
         cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3),
                      text[0].upper() + text[1:] if len(text) > 1 else text.upper()))
@@ -220,7 +220,8 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
 def generate_srt(transcript: dict, clip_start: float, clip_end: float,
                  output_path: str | Path,
                  max_chars: int = config.SRT_MAX_CHARS,
-                 max_duration: float = config.SRT_MAX_DURATION_S) -> bool:
+                 max_duration: float = config.SRT_MAX_DURATION_S,
+                 time_offset: float = 0.0) -> bool:
     """
     Write an SRT for the clip window [clip_start, clip_end] with timestamps
     relative to clip_start. Returns False when the window has no words.
@@ -231,7 +232,7 @@ def generate_srt(transcript: dict, clip_start: float, clip_end: float,
         raise SubtitleError("generate_srt needs a transcript with segments")
 
     cues = _cues(transcript, float(clip_start), float(clip_end),
-                 int(max_chars), float(max_duration))
+                 int(max_chars), float(max_duration), float(time_offset))
     out = Path(output_path)
     if not cues:
         return False
