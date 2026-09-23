@@ -225,37 +225,69 @@ def parse_json3_subs(json3_path: str | Path) -> dict:
     with open(json3_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     events = data.get("events", [])
-    segments: list[dict] = []
-    full_text_parts: list[str] = []
+    raw_words: list[dict] = []
     for e in events:
         start_ms = e.get("tStartMs", 0)
         dur_ms = e.get("dDurationMs", 0)
         segs = e.get("segs", [])
         if not segs:
             continue
-        seg_text = "".join(s.get("utf8", "") for s in segs).strip()
-        if not seg_text:
+        valid_segs = [s for s in segs if s.get("utf8") and s.get("utf8").strip() and s.get("utf8") != "\n"]
+        if not valid_segs:
             continue
-        start_s = round(start_ms / 1000.0, 3)
-        end_s = round((start_ms + dur_ms) / 1000.0, 3)
-        words = []
-        for s in segs:
+
+        for i, s in enumerate(valid_segs):
             w_text = s.get("utf8", "").strip()
-            if not w_text:
-                continue
             offset_ms = s.get("tOffsetMs", 0)
-            w_start = round((start_ms + offset_ms) / 1000.0, 3)
-            w_end = min(end_s, round(w_start + 0.35, 3))
-            words.append({"word": w_text, "start": w_start, "end": w_end, "probability": 1.0})
+            w_start = (start_ms + offset_ms) / 1000.0
+
+            if i + 1 < len(valid_segs) and "tOffsetMs" in valid_segs[i + 1]:
+                w_end = (start_ms + valid_segs[i + 1]["tOffsetMs"]) / 1000.0
+            else:
+                w_end = min((start_ms + dur_ms) / 1000.0, w_start + 0.5)
+            if w_end <= w_start:
+                w_end = w_start + 0.35
+
+            # Deduplicate rolling buffer repetitions from YouTube streaming ASR
+            if raw_words:
+                last_w = raw_words[-1]
+                if last_w["word"].lower() == w_text.lower() and abs(w_start - last_w["start"]) < 1.2:
+                    continue
+
+            raw_words.append({
+                "word": w_text,
+                "start": round(w_start, 3),
+                "end": round(w_end, 3),
+                "probability": 1.0,
+            })
+
+    # Group words into natural sentence/phrase segments
+    segments: list[dict] = []
+    curr_words: list[dict] = []
+
+    def flush() -> None:
+        if not curr_words:
+            return
+        text = " ".join(w["word"] for w in curr_words)
         segments.append({
-            "start": start_s,
-            "end": end_s,
-            "text": seg_text,
-            "words": words,
+            "start": curr_words[0]["start"],
+            "end": curr_words[-1]["end"],
+            "text": text,
+            "words": list(curr_words),
         })
-        full_text_parts.append(seg_text)
+        curr_words.clear()
+
+    for w in raw_words:
+        if curr_words:
+            gap = w["start"] - curr_words[-1]["end"]
+            prev_txt = curr_words[-1]["word"]
+            if gap > 0.75 or len(curr_words) >= 10 or prev_txt.endswith((".", "!", "?")):
+                flush()
+        curr_words.append(w)
+    flush()
+
     return {
-        "text": " ".join(full_text_parts),
+        "text": " ".join(s["text"] for s in segments),
         "language": "id",
         "segments": segments,
     }

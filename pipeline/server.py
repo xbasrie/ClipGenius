@@ -168,7 +168,8 @@ def run_job(job_id: str) -> None:
         if "transcribe" not in done or not transcript:
             _check_canceled()
             src_url = opts.get("url")
-            if src_url:
+            use_yt_subs = opts.get("use_youtube_subs", True)
+            if src_url and use_yt_subs:
                 _progress(job_id, "transcribe", 10, "Mengecek subtitle bawaan YouTube...")
                 transcript = media.fetch_youtube_transcript(src_url, work)
                 if transcript and transcript.get("segments"):

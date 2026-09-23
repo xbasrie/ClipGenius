@@ -210,11 +210,15 @@
                 </select>
               </div>
 
-              <!-- Checkbox Auto Face Tracking -->
-              <div class="flex items-center h-full pt-4">
-                <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-300">
+              <!-- Options Checkboxes -->
+              <div class="flex flex-col justify-center gap-2 pt-2">
+                <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
                   <input type="checkbox" id="opt-reframe" checked class="w-4 h-4 text-emerald-600 rounded bg-slate-950 border-slate-800 focus:ring-emerald-500">
                   <span>Smart Face & Speaker Tracking</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300" title="Centang untuk download subtitle YouTube instan. Uncheck untuk paksa Whisper STT offline jika ingin akurasi audio 100% pas.">
+                  <input type="checkbox" id="opt-yt-subs" checked class="w-4 h-4 text-emerald-600 rounded bg-slate-950 border-slate-800 focus:ring-emerald-500">
+                  <span>Gunakan Subtitle YouTube (Bypass Cepat)</span>
                 </label>
               </div>
             </div>
@@ -1145,7 +1149,8 @@
         model_tier: document.getElementById('opt-stt').value,
         aspect: document.getElementById('opt-aspect').value,
         subtitle_preset: document.getElementById('opt-subtitle').value,
-        reframe: document.getElementById('opt-reframe').checked
+        reframe: document.getElementById('opt-reframe').checked,
+        use_youtube_subs: document.getElementById('opt-yt-subs').checked
       };
 
       const btn = document.getElementById('btn-submit');
