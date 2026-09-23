@@ -155,8 +155,9 @@ def format_srt_block(index: int, start: float, end: float, text: str) -> str:
 
 
 def _cues(transcript: dict, clip_start: float, clip_end: float,
-          max_chars: int, max_duration: float, time_offset: float = 0.0) -> list[tuple[float, float, str]]:
-    """Word stream inside the clip window -> short relative-time cues."""
+          max_chars: int, max_duration: float, time_offset: float = 0.0,
+          word_by_word: bool = True) -> list[tuple[float, float, str]]:
+    """Word stream inside the clip window -> relative-time cues."""
     words: list[dict] = []
     for seg in transcript.get("segments") or []:
         seg_words = seg.get("words") or []
@@ -178,8 +179,23 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
     if not window:
         return []
 
-    cues: list[tuple[float, float, str]] = []
-    line: list[dict] = []
+    # Per-kata (Word-by-Word) mode: single word pop-up per cue
+    if word_by_word:
+        cues: list[tuple[float, float, str]] = []
+        for w in window:
+            start = w["start"] - clip_start + time_offset
+            end = w["end"] - clip_start + time_offset
+            if end <= start:
+                end = start + 0.2
+            word_text = w["word"].strip()
+            if word_text:
+                cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3),
+                             word_text.upper()))
+        return cues
+
+    # Sentence / phrase grouping mode
+    cues = []
+    line = []
 
     def flush() -> None:
         if not line:
@@ -206,22 +222,15 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
             flush()
     flush()
 
-    # merge cues too short to read (<0.4 s) into the next one
-    merged: list[tuple[float, float, str]] = []
-    for cue in cues:
-        if merged and cue[0] - merged[-1][1] < 0.05 and (cue[1] - cue[0]) < 0.4:
-            p = merged.pop()
-            merged.append((p[0], max(p[1], cue[1]), f"{p[2]} {cue[2]}"))
-        else:
-            merged.append(cue)
-    return merged
+    return cues
 
 
 def generate_srt(transcript: dict, clip_start: float, clip_end: float,
                  output_path: str | Path,
                  max_chars: int = config.SRT_MAX_CHARS,
                  max_duration: float = config.SRT_MAX_DURATION_S,
-                 time_offset: float = 0.0) -> bool:
+                 time_offset: float = 0.0,
+                 word_by_word: bool = True) -> bool:
     """
     Write an SRT for the clip window [clip_start, clip_end] with timestamps
     relative to clip_start. Returns False when the window has no words.
@@ -232,7 +241,8 @@ def generate_srt(transcript: dict, clip_start: float, clip_end: float,
         raise SubtitleError("generate_srt needs a transcript with segments")
 
     cues = _cues(transcript, float(clip_start), float(clip_end),
-                 int(max_chars), float(max_duration), float(time_offset))
+                 int(max_chars), float(max_duration), float(time_offset),
+                 word_by_word=word_by_word)
     out = Path(output_path)
     if not cues:
         return False

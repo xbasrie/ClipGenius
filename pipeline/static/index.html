@@ -902,22 +902,28 @@
       const words = [];
       transcript.forEach(item => {
         if (item.words && item.words.length) {
-          item.words.forEach(w => words.push({
-            text: w.word || w.text || '',
-            start: parseFloat(w.start),
-            end: parseFloat(w.end)
-          }));
-        } else if (item.text) {
-          words.push({
-            text: item.text,
-            start: parseFloat(item.start),
-            end: parseFloat(item.end)
+          item.words.forEach(w => {
+            const txt = (w.word || w.text || '').trim();
+            if (txt) {
+              words.push({
+                text: txt,
+                start: parseFloat(w.start),
+                end: parseFloat(w.end)
+              });
+            }
           });
-        } else if (item.word) {
-          words.push({
-            text: item.word,
-            start: parseFloat(item.start),
-            end: parseFloat(item.end)
+        } else if (item.text || item.word) {
+          const raw = (item.text || item.word || '').trim();
+          const toks = raw.split(/\s+/).filter(Boolean);
+          const start = parseFloat(item.start) || 0;
+          const end = parseFloat(item.end) || (start + 1.5);
+          const span = Math.max(0.1, (end - start) / Math.max(1, toks.length));
+          toks.forEach((tok, i) => {
+            words.push({
+              text: tok,
+              start: Number((start + (i * span)).toFixed(2)),
+              end: Number((start + ((i + 1) * span)).toFixed(2))
+            });
           });
         }
       });

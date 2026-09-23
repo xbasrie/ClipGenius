@@ -276,7 +276,7 @@ def run_job(job_id: str) -> None:
                                   cm["file"])
                 srt = work / f"clip_{cm['idx']}.srt"
                 tc = {"segments": _slice_transcript(transcript, cm["start_s"], cm["end_s"])}
-                if sub_mod.generate_srt(tc, cm["start_s"], cm["end_s"], srt):
+                if sub_mod.generate_srt(tc, cm["start_s"], cm["end_s"], srt, word_by_word=True):
                     db.update_clip(cid, subtitle={"srt": str(srt),
                                                   "preset": opts.get("subtitle_preset",
                                                                      "classic_white")})
