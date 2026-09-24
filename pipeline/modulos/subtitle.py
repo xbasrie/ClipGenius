@@ -24,6 +24,32 @@ def hex_to_ass_color(hex_color: str, opacity: float = 1.0) -> str:
     return f"&H{alpha:02X}{b}{g}{r}"
 
 
+# Supported entrance animations:
+# 'none', 'pop', 'fade', 'bounce', 'slide_up'
+ENTRANCE_ANIMATIONS = ("none", "pop", "fade", "bounce", "slide_up")
+
+
+def get_animation_ass_tag(animation: str, duration_ms: int = 140) -> str:
+    """Return inline ASS tag string for entrance animation."""
+    if not animation or animation == "none":
+        return ""
+    dur = max(60, min(500, int(duration_ms)))
+    if animation == "pop":
+        # Scale up from 70% to 105% then settle to 100%
+        return f"{{\\fscx75\\fscy75\\t(0,{dur},\\fscx100\\fscy100)}}"
+    elif animation == "fade":
+        # Fade in alpha from invisible to visible
+        return f"{{\\alpha&HFF&\\t(0,{dur},\\alpha&H00&)}}"
+    elif animation == "bounce":
+        # Bounce: zoom from 60% to 118% then settle to 100%
+        half = dur // 2
+        return f"{{\\fscx60\\fscy60\\t(0,{half},\\fscx118\\fscy118)\\t({half},{dur},\\fscx100\\fscy100)}}"
+    elif animation == "slide_up":
+        # Slight vertical rise with fade
+        return f"{{\\fscy80\\alpha&HBB&\\t(0,{dur},\\fscy100\\alpha&H00&)}}"
+    return ""
+
+
 # ---------- presets ----------
 
 PRESETS: dict[str, dict] = {
@@ -110,22 +136,37 @@ def _ass_time(seconds: float) -> str:
 def build_force_style(preset_name: str, custom_style: dict | None = None) -> str:
     """Force_style option string for the FFmpeg ass/subtitles filter."""
     if preset_name not in PRESETS:
-        raise SubtitleError(f"Unknown preset {preset_name!r}; available: {sorted(PRESETS)}")
-    style = dict(PRESETS[preset_name])
+        preset_name = "classic_white"
+    style = dict(PRESETS.get(preset_name, PRESETS["classic_white"]))
     if custom_style:
         style.update({k: v for k, v in custom_style.items() if v is not None})
     bg_opacity = float(style.get("bg_opacity", 0.0))
+
+    # Glow effect handling:
+    # If glow is active, enlarge outline border and use neon glow color with subtle shadow
+    glow = bool(style.get("glow", False))
+    border_width = float(style.get("border_width", 2.0))
+    shadow = float(style.get("shadow", 0.0))
+    border_color = style.get("border_color", "#000000")
+
+    if glow:
+        border_width = max(border_width, 4.5)
+        shadow = max(shadow, 2.5)
+        # Use glow color if specified, else use font color or high saturation cyan/amber
+        glow_col = style.get("glow_color") or style.get("font_color") or "#00FFFF"
+        border_color = glow_col
+
     parts = [
         f"FontName={style['fontname']}",
         f"FontSize={style['fontsize']}",
         f"PrimaryColour={hex_to_ass_color(style['font_color'], 1.0)}",
-        f"OutlineColour={hex_to_ass_color(style['border_color'], 1.0)}",
+        f"OutlineColour={hex_to_ass_color(border_color, 0.9 if glow else 1.0)}",
         f"BackColour={hex_to_ass_color(style.get('bg_color', '#000000'), bg_opacity)}",
         f"BorderStyle={3 if bg_opacity > 0 else 1}",
-        f"Outline={style.get('border_width', 2.0)}",
-        f"Shadow={style.get('shadow', 0.0)}",
+        f"Outline={border_width}",
+        f"Shadow={shadow}",
         f"Bold={style.get('bold', 0)}",
-        f"Alignment={style['alignment']}",
+        f"Alignment={style.get('alignment', 2)}",
         f"MarginV={style.get('margin_v', 60)}",
     ]
     return ",".join(parts)
@@ -156,7 +197,8 @@ def format_srt_block(index: int, start: float, end: float, text: str) -> str:
 
 def _cues(transcript: dict, clip_start: float, clip_end: float,
           max_chars: int, max_duration: float, time_offset: float = 0.0,
-          word_by_word: bool = True) -> list[tuple[float, float, str]]:
+          word_by_word: bool = True, words_per_chunk: int = 1,
+          animation: str = "none") -> list[tuple[float, float, str]]:
     """Word stream inside the clip window -> relative-time cues."""
     words: list[dict] = []
     for seg in transcript.get("segments") or []:
@@ -179,21 +221,25 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
     if not window:
         return []
 
-    # Per-kata (Word-by-Word) mode: single word pop-up per cue
-    if word_by_word:
+    anim_tag = get_animation_ass_tag(animation)
+
+    # Word-by-word or N-words per chunk mode (1 to 5 words)
+    words_per_chunk = max(1, min(10, int(words_per_chunk or 1)))
+    if word_by_word or words_per_chunk >= 1:
         cues: list[tuple[float, float, str]] = []
-        for w in window:
-            start = w["start"] - clip_start + time_offset
-            end = w["end"] - clip_start + time_offset
+        for i in range(0, len(window), words_per_chunk):
+            chunk = window[i:i + words_per_chunk]
+            start = chunk[0]["start"] - clip_start + time_offset
+            end = chunk[-1]["end"] - clip_start + time_offset
             if end <= start:
-                end = start + 0.2
-            word_text = w["word"].strip()
-            if word_text:
-                cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3),
-                             word_text.upper()))
+                end = start + 0.25 * len(chunk)
+            chunk_text = " ".join(w["word"].strip().upper() for w in chunk if w["word"].strip())
+            if chunk_text:
+                full_text = f"{anim_tag}{chunk_text}" if anim_tag else chunk_text
+                cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3), full_text))
         return cues
 
-    # Sentence / phrase grouping mode
+    # Sentence / phrase grouping mode fallback
     cues = []
     line = []
 
@@ -207,8 +253,9 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
         start = line[0]["start"] - clip_start + time_offset
         end = line[-1]["end"] - clip_start + time_offset
         line.clear()
-        cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3),
-                     text[0].upper() + text[1:] if len(text) > 1 else text.upper()))
+        content = text[0].upper() + text[1:] if len(text) > 1 else text.upper()
+        full_text = f"{anim_tag}{content}" if anim_tag else content
+        cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3), full_text))
 
     for w in window:
         if line:
@@ -230,7 +277,9 @@ def generate_srt(transcript: dict, clip_start: float, clip_end: float,
                  max_chars: int = config.SRT_MAX_CHARS,
                  max_duration: float = config.SRT_MAX_DURATION_S,
                  time_offset: float = 0.0,
-                 word_by_word: bool = True) -> bool:
+                 word_by_word: bool = True,
+                 words_per_chunk: int = 1,
+                 animation: str = "none") -> bool:
     """
     Write an SRT for the clip window [clip_start, clip_end] with timestamps
     relative to clip_start. Returns False when the window has no words.
@@ -242,7 +291,8 @@ def generate_srt(transcript: dict, clip_start: float, clip_end: float,
 
     cues = _cues(transcript, float(clip_start), float(clip_end),
                  int(max_chars), float(max_duration), float(time_offset),
-                 word_by_word=word_by_word)
+                 word_by_word=word_by_word, words_per_chunk=words_per_chunk,
+                 animation=animation)
     out = Path(output_path)
     if not cues:
         return False

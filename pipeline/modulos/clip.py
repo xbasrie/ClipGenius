@@ -190,9 +190,33 @@ def blurred_general_frame(frame, out_w: int, out_h: int):
     return bg
 
 
+def split_dual_screen(frame, out_w: int, out_h: int, face1, face2):
+    """Split screen into Top (Speaker 1) and Bottom (Speaker 2)."""
+    vid_h, vid_w = frame.shape[:2]
+    half_h = out_h // 2  # 960 each
+    sub_crop_w = int(vid_h * (out_w / half_h))
+    sub_crop_w = min(sub_crop_w, vid_w)
+
+    def crop_face(f):
+        fx, _fy, fw, _fh = f
+        cx = fx + fw / 2
+        half_w = sub_crop_w / 2
+        cx = max(half_w, min(cx, vid_w - half_w))
+        x1 = max(0, int(cx - half_w))
+        x2 = min(vid_w, int(cx + half_w))
+        sub = frame[0:vid_h, x1:x2]
+        return cv2.resize(sub, (out_w, half_h))
+
+    top_img = crop_face(face1)
+    bot_img = crop_face(face2)
+    # Stack vertically: top scene + bottom scene
+    return cv2.vconcat([top_img, bot_img])
+
+
 def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
                         scene_strategy: Callable[[float], str] | None = None,
-                        progress_cb: Callable[[float], None] | None = None) -> Path:
+                        progress_cb: Callable[[float], None] | None = None,
+                        allow_split_screen: bool = True) -> Path:
     """Stream frames -> ffmpeg stdin. Never loads the whole video into RAM."""
     input_video, output_video = Path(input_video), Path(output_video)
     cap = cv2.VideoCapture(str(input_video))
@@ -212,6 +236,10 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
     cameraman = SmoothedCameraman(out_w, out_h, vid_w, vid_h)
     tracker = SpeakerTracker()
     scenes = detect_scenes(input_video, fps)
+
+    # Multi-speaker dual face state
+    dual_faces: list[tuple[int, int, int, int]] = []
+    dual_hold_frames = 0
 
     output_video.parent.mkdir(parents=True, exist_ok=True)
     tmp_out = output_video.with_suffix(".tmp.mp4")
@@ -233,18 +261,45 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
                 break
             t = frame_no / fps
             mode = scene_strategy(t) if scene_strategy else "TRACK"
-            if mode == "GENERAL":
+
+            # Detect faces every 4 frames
+            current_faces = []
+            if frame_no % 4 == 0:
+                current_faces = detect_faces(frame)
+                if allow_split_screen and len(current_faces) >= 2:
+                    # Sort faces from left to right
+                    s_faces = sorted(current_faces, key=lambda f: f[0])
+                    # If two prominent distinct faces separated horizontally
+                    if s_faces[1][0] - (s_faces[0][0] + s_faces[0][2]) > vid_w * 0.08:
+                        dual_faces = [s_faces[0], s_faces[1]]
+                        dual_hold_frames = int(fps * 2.0)  # Hold dual screen layout for at least 2 seconds
+                    elif dual_hold_frames > 0:
+                        dual_hold_frames -= 1
+                    else:
+                        dual_faces = []
+                elif dual_hold_frames > 0:
+                    dual_hold_frames -= 1
+                else:
+                    dual_faces = []
+
+            # Rendering logic:
+            if allow_split_screen and dual_faces and len(dual_faces) == 2 and dual_hold_frames > 0:
+                # Scene atas & scene bawah (2 pembicara terpisah / podcast)
+                out = split_dual_screen(frame, out_w, out_h, dual_faces[0], dual_faces[1])
+            elif mode == "GENERAL":
                 out = blurred_general_frame(frame, out_w, out_h)
                 cameraman.current_center_x = vid_w / 2
                 cameraman.target_center_x = vid_w / 2
             else:
+                faces = current_faces if current_faces else detect_faces(frame)
                 if frame_no % 2 == 0:
-                    cameraman.update_target(tracker.get_target(detect_faces(frame), frame_no, vid_w))
+                    cameraman.update_target(tracker.get_target(faces, frame_no, vid_w))
                 x1, y1, x2, y2 = cameraman.get_crop_box(force_snap=is_scene_start(frame_no, fps, scenes))
                 if x2 > x1 and y2 > y1:
                     out = cv2.resize(frame[y1:y2, x1:x2], (out_w, out_h))
                 else:
                     out = cv2.resize(frame, (out_w, out_h))
+
             proc.stdin.write(out.tobytes())  # type: ignore[union-attr]
             frame_no += 1
             if progress_cb and frame_no % 15 == 0:

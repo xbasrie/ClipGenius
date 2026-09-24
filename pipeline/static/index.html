@@ -44,6 +44,31 @@
       scrollbar-width: thin;
       scrollbar-color: #1E293B #0E1424;
     }
+
+    /* Subtitle Entrance Animations */
+    @keyframes subPop {
+      0% { transform: scale(0.75); opacity: 0.6; }
+      70% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes subBounce {
+      0% { transform: scale(0.6); }
+      50% { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+    @keyframes subFade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes subSlideUp {
+      0% { transform: translateY(12px) scale(0.85); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .anim-pop { animation: subPop 0.16s ease-out forwards; }
+    .anim-bounce { animation: subBounce 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    .anim-fade { animation: subFade 0.18s ease-in forwards; }
+    .anim-slide_up { animation: subSlideUp 0.18s ease-out forwards; }
   </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col antialiased bg-[#090D16] text-slate-100 select-none">
@@ -68,9 +93,12 @@
     </div>
 
     <!-- Center: Active Workspace / Project Indicator -->
-    <div class="hidden md:flex items-center gap-2 text-[11px] text-slate-400 bg-[#070A12] border border-slate-800/80 px-3 py-0.5 rounded-md font-mono">
+    <div class="hidden md:flex items-center gap-2 text-[11px] text-slate-400 bg-[#070A12] border border-slate-800/80 px-2.5 py-0.5 rounded-md font-mono">
       <i data-lucide="folder-git-2" class="w-3.5 h-3.5 text-emerald-400"></i>
-      <span class="text-slate-300 font-medium truncate max-w-[280px]">D:\clipgenius_data</span>
+      <span id="titlebar-workspace-path" class="text-slate-300 font-medium truncate max-w-[280px]">D:\clipgenius_data</span>
+      <button type="button" onclick="browseAndSetWorkspace()" title="Pilih Folder Ruang Kerja" class="ml-1 text-slate-500 hover:text-emerald-400 transition-colors">
+        <i data-lucide="folder-open" class="w-3.5 h-3.5"></i>
+      </button>
     </div>
 
     <!-- Right: Status Badge & Tools -->
@@ -131,11 +159,16 @@
 
       <!-- Sidebar Footer (Storage Location) -->
       <div class="border-t border-slate-800/80 pt-2.5">
-        <div class="p-2 rounded-lg bg-[#070A12] border border-slate-800/80 text-[10px] text-slate-400 space-y-1">
-          <div class="flex items-center gap-1.5 text-slate-300 font-semibold">
-            <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i> Ruang Kerja
+        <div class="p-2 rounded-lg bg-[#070A12] border border-slate-800/80 text-[10px] text-slate-400 space-y-1.5">
+          <div class="flex items-center justify-between text-slate-300 font-semibold">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-emerald-400"></i> Ruang Kerja
+            </span>
+            <button type="button" onclick="browseAndSetWorkspace()" title="Pilih Folder Baru" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] border border-slate-700 flex items-center gap-1 transition-colors">
+              <i data-lucide="folder-open" class="w-3 h-3 text-emerald-400"></i> Ubah
+            </button>
           </div>
-          <div class="font-mono text-slate-400 break-all select-all text-[10px]">D:\clipgenius_data</div>
+          <div id="sidebar-workspace-path" class="font-mono text-slate-400 break-all select-all text-[10px] leading-tight">D:\clipgenius_data</div>
         </div>
       </div>
     </aside>
@@ -184,12 +217,18 @@
 
             <!-- Local File Input Box -->
             <div id="box-input-file" class="space-y-2 hidden">
-              <div class="relative">
-                <input type="text" id="input-file" placeholder="C:\Users\elbasrie\Videos\podcast.mp4"
-                  class="w-full pl-11 pr-4 py-3.5 bg-[#0B0F19] border border-slate-800 rounded-xl text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all text-sm font-mono">
-                <i data-lucide="file-video" class="w-5 h-5 text-slate-500 absolute left-3.5 top-3.5"></i>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input type="text" id="input-file" placeholder="C:\Users\elbasrie\Videos\podcast.mp4"
+                    class="w-full pl-11 pr-4 py-3 bg-[#070A12] border border-slate-800 rounded-lg text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none transition-all text-xs font-mono">
+                  <i data-lucide="file-video" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
+                </div>
+                <button type="button" onclick="browseFolderForInput('input-file')"
+                  class="px-3.5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0">
+                  <i data-lucide="folder-open" class="w-3.5 h-3.5 text-emerald-400"></i> Pilih File/Folder...
+                </button>
               </div>
-              <p class="text-xs text-slate-500">Format didukung: MP4, MKV, MOV, WEBM. Masukkan path absolut file di harddisk.</p>
+              <p class="text-xs text-slate-500">Format didukung: MP4, MKV, MOV, WEBM. Pilih folder/file lewat dialog OS.</p>
             </div>
           </div>
 
@@ -245,24 +284,19 @@
                 </select>
               </div>
 
-              <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1.5">Preset Gaya Subtitle</label>
-                <select id="opt-subtitle" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 outline-none">
-                  <option value="bold_yellow" selected>Bold Yellow Pop (Kuning Tebal TikTok)</option>
-                  <option value="karaoke">Karaoke Gradient (Highlight Kata)</option>
-                  <option value="clean_white">Clean White (Klasik Minimalis)</option>
-                </select>
-              </div>
-
-              <!-- Toggles -->
-              <div class="space-y-2 pt-1">
-                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                  <input type="checkbox" id="opt-yt-subs" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
-                  <span>Gunakan Subtitle YouTube (Bypass Cepat)</span>
-                </label>
+              <!-- Toggles: Reframe, Multi-Face Split -->
+              <div class="space-y-2 pt-1 border-t border-slate-800/80">
                 <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
                   <input type="checkbox" id="opt-reframe" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
-                  <span>Smart Face Tracking (Auto Crop ke Wajah Pembicara)</span>
+                  <span class="font-medium">Auto Reframe 9:16 (Smart Speaker Tracking)</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="opt-dual-face" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
+                  <span class="font-medium text-emerald-300">Multi-Face Split (Scene Atas & Bawah bila 2 orang)</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input type="checkbox" id="opt-yt-subs" checked class="rounded bg-[#111726] border-slate-700 text-emerald-500 focus:ring-emerald-500 accent-emerald-500 w-4 h-4">
+                  <span>Gunakan Subtitle YouTube (Bypass Cepat jika ada)</span>
                 </label>
               </div>
             </div>
@@ -353,6 +387,9 @@
             <button onclick="switchStudioTool('hook')" id="stool-hook" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5">
               <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Hook Header
             </button>
+            <button onclick="switchStudioTool('wm')" id="stool-wm" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5">
+              <i data-lucide="shield" class="w-3.5 h-3.5"></i> Watermark
+            </button>
           </div>
 
           <!-- TAB 1: Subtitle & Waktu -->
@@ -397,6 +434,29 @@
 
           <!-- TAB 2: Font & Gaya -->
           <div id="stool-panel-style" class="flex-1 p-4 overflow-y-auto space-y-4 hidden">
+            <!-- Preset Cepat Subtitle -->
+            <div class="space-y-2">
+              <label class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">Preset Gaya Cepat</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="applyStudioPreset('bold_yellow')" class="p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:border-amber-500 hover:bg-amber-950/20 text-left transition-all group">
+                  <div class="text-[11px] font-bold text-amber-400 group-hover:text-amber-300">Bold Yellow Pop</div>
+                  <div class="text-[10px] text-slate-400">Kuning tebal + shadow hitam</div>
+                </button>
+                <button type="button" onclick="applyStudioPreset('neon_glow')" class="p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:border-cyan-500 hover:bg-cyan-950/20 text-left transition-all group">
+                  <div class="text-[11px] font-bold text-cyan-400 group-hover:text-cyan-300">Neon Glow</div>
+                  <div class="text-[10px] text-slate-400">Cyan cerah + glow outline</div>
+                </button>
+                <button type="button" onclick="applyStudioPreset('creator_pop')" class="p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:border-pink-500 hover:bg-pink-950/20 text-left transition-all group">
+                  <div class="text-[11px] font-bold text-pink-400 group-hover:text-pink-300">Creator Pop</div>
+                  <div class="text-[10px] text-slate-400">Magenta mencolok TikTok</div>
+                </button>
+                <button type="button" onclick="applyStudioPreset('clean_white')" class="p-2.5 rounded-xl border border-slate-800 bg-[#0B0F19] hover:border-slate-500 hover:bg-slate-800/40 text-left transition-all group">
+                  <div class="text-[11px] font-bold text-white group-hover:text-slate-200">Clean White</div>
+                  <div class="text-[10px] text-slate-400">Putih bersih minimalis</div>
+                </button>
+              </div>
+            </div>
+
             <!-- Font Selection -->
             <div class="space-y-2">
               <div class="flex items-center justify-between">
@@ -504,7 +564,7 @@
                   <span class="text-[11px] font-semibold text-slate-300">Ukuran Font Subtitle</span>
                   <span id="sub-font-size-val" class="text-xs text-emerald-400 font-mono font-bold">16px</span>
                 </div>
-                <input type="range" id="sub-font-size" min="12" max="36" value="16" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+                <input type="range" id="sub-font-size" min="12" max="44" value="16" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
               </div>
 
               <div>
@@ -513,6 +573,40 @@
                   <span id="sub-pos-y-val" class="text-xs text-emerald-400 font-mono font-bold">18% (Bawah)</span>
                 </div>
                 <input type="range" id="sub-pos-y" min="5" max="50" value="18" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+              </div>
+
+              <!-- Animasi Masuk & Words Per Chunk & Glow di Studio Editor -->
+              <div class="pt-2 border-t border-slate-800 space-y-2.5">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-300 block mb-1">Animasi Masuk</label>
+                    <select id="studio-sub-anim" onchange="updateLiveSubtitlePreview()" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none">
+                      <option value="pop" selected>Pop Zoom</option>
+                      <option value="bounce">Bounce</option>
+                      <option value="fade">Fade In</option>
+                      <option value="slide_up">Slide Up</option>
+                      <option value="none">Tanpa Animasi</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-[11px] font-semibold text-slate-300 block mb-1">Kata Per Chunk</label>
+                    <select id="studio-sub-chunk" onchange="updateLiveSubtitlePreview()" class="w-full bg-[#111726] border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none">
+                      <option value="1" selected>1 Kata</option>
+                      <option value="2">2 Kata</option>
+                      <option value="3">3 Kata</option>
+                      <option value="4">4 Kata</option>
+                      <option value="5">5 Kata</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                  <span class="text-[11px] font-semibold text-slate-300">Efek Glow Neon</span>
+                  <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                    <input type="checkbox" id="sub-glow-enable" onchange="updateLiveSubtitlePreview()" class="rounded bg-[#0B0F19] border-slate-700 accent-emerald-500 w-4 h-4">
+                    <span id="sub-glow-label" class="text-[11px] font-mono text-slate-400">Nonaktif</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -539,6 +633,88 @@
               </div>
             </div>
           </div>
+
+          <!-- TAB 4: Watermark & Branding -->
+          <div id="stool-panel-wm" class="flex-1 p-4 overflow-y-auto space-y-4 hidden">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300 block">Watermark & Branding</span>
+                <span class="text-[10px] text-slate-400">Tempel identitas channel / akun di video klip</span>
+              </div>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="wm-enable" onchange="updateLiveSubtitlePreview()" class="rounded bg-[#0B0F19] border-slate-700 accent-emerald-500 w-4 h-4">
+                <span id="wm-enable-label" class="text-xs font-mono font-bold text-slate-400">Nonaktif</span>
+              </label>
+            </div>
+
+            <!-- Tipe Watermark -->
+            <div class="space-y-2">
+              <label class="text-[11px] font-semibold text-slate-300 block">Tipe Watermark</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" id="wm-btn-text" onclick="setWatermarkType('text')"
+                  class="p-2 rounded-xl border border-emerald-500 bg-emerald-950/40 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                  <i data-lucide="type" class="w-3.5 h-3.5"></i> Teks / Handle
+                </button>
+                <button type="button" id="wm-btn-image" onclick="setWatermarkType('image')"
+                  class="p-2 rounded-xl border border-slate-800 bg-[#0B0F19] text-slate-400 font-medium text-xs flex items-center justify-center gap-1.5 transition-all">
+                  <i data-lucide="image" class="w-3.5 h-3.5"></i> Logo Gambar
+                </button>
+              </div>
+              <input type="hidden" id="wm-type" value="text">
+            </div>
+
+            <!-- Input Teks Watermark -->
+            <div id="wm-group-text" class="space-y-2">
+              <label class="text-[11px] font-semibold text-slate-300 block">Teks / Handle Medsos</label>
+              <input type="text" id="wm-text" oninput="updateLiveSubtitlePreview()" placeholder="Misal: @clipgenius atau Nama Brand"
+                value="@clipgenius"
+                class="w-full bg-[#0B0F19] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:border-emerald-500 focus:outline-none transition-colors">
+            </div>
+
+            <!-- Input Gambar Watermark -->
+            <div id="wm-group-image" class="space-y-2 hidden">
+              <label class="text-[11px] font-semibold text-slate-300 block">File Logo (PNG Transparan Disarankan)</label>
+              <div class="flex gap-2">
+                <input type="text" id="wm-image-path" oninput="updateLiveSubtitlePreview()" placeholder="C:\path\to\logo.png"
+                  class="flex-1 bg-[#0B0F19] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none transition-colors truncate">
+                <button type="button" onclick="pickWatermarkLogo()"
+                  class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors shrink-0">
+                  <i data-lucide="folder" class="w-3.5 h-3.5"></i> Pilih
+                </button>
+              </div>
+            </div>
+
+            <!-- Posisi Watermark -->
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-semibold text-slate-300 block">Posisi Watermark</label>
+              <select id="wm-position" onchange="updateLiveSubtitlePreview()" class="w-full bg-[#0B0F19] border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 outline-none">
+                <option value="top_right" selected>Pojok Kanan Atas</option>
+                <option value="top_left">Pojok Kiri Atas</option>
+                <option value="center_top">Tengah Atas</option>
+                <option value="bottom_right">Pojok Kanan Bawah</option>
+                <option value="bottom_left">Pojok Kiri Bawah</option>
+              </select>
+            </div>
+
+            <!-- Slider Opacity & Ukuran -->
+            <div class="space-y-3 pt-2 border-t border-slate-800">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[11px] font-semibold text-slate-300">Transparansi / Opacity</span>
+                  <span id="wm-opacity-val" class="text-xs text-emerald-400 font-mono font-bold">80%</span>
+                </div>
+                <input type="range" id="wm-opacity" min="0.1" max="1.0" step="0.05" value="0.8" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[11px] font-semibold text-slate-300">Ukuran Font / Lebar</span>
+                  <span id="wm-size-val" class="text-xs text-emerald-400 font-mono font-bold">24px</span>
+                </div>
+                <input type="range" id="wm-size" min="14" max="48" step="1" value="24" oninput="updateLiveSubtitlePreview()" class="w-full accent-emerald-500 cursor-pointer">
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- RIGHT PANEL: Video Player Canvas & Integrated Timeline - 7 Columns -->
@@ -549,6 +725,14 @@
               <video id="editor-video-player" class="w-full h-full object-contain" controls playsinline>
                 <source id="editor-video-source" src="" type="video/mp4">
               </video>
+
+              <!-- Live Watermark Overlay Preview -->
+              <div id="editor-wm-overlay" class="absolute z-20 pointer-events-none hidden transition-all duration-150">
+                <span id="editor-wm-text" class="font-bold tracking-tight px-2 py-0.5 rounded text-white drop-shadow-md whitespace-nowrap">
+                  @clipgenius
+                </span>
+                <img id="editor-wm-img" src="" class="hidden object-contain max-h-16" alt="watermark">
+              </div>
 
               <!-- Live Hook Overlay Preview (Top) -->
               <div id="editor-hook-overlay" class="absolute top-5 inset-x-3 text-center pointer-events-none transition-all duration-150 z-20 hidden">
@@ -648,8 +832,38 @@
 
     <!-- VIEW 3: SETTINGS -->
     <div id="view-settings" class="hidden max-w-3xl mx-auto space-y-6">
-      <div class="bg-[#111726] border border-slate-800 rounded-2xl p-8 shadow-xl text-white">
-        text-xl font-extrabold text-white mb-2 tracking-tight">Pengaturan AI & Model</h2>
+      <!-- Card 1: Workspace Storage Directory -->
+      <div class="bg-[#111726] border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl text-white space-y-4">
+        <div>
+          <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <i data-lucide="hard-drive" class="w-4 h-4 text-emerald-400"></i> Ruang Kerja & Penyimpanan Data
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Semua video unduhan, klip potongan, subtitle SRT, dan database proyek disimpan di folder ini.</p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Direktori Folder Ruang Kerja</label>
+          <div class="flex items-center gap-2">
+            <input type="text" id="set-workspace-input" placeholder="D:\clipgenius_data"
+              class="flex-1 bg-[#0B0F19] border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none">
+            <button type="button" onclick="browseFolderForInput('set-workspace-input')"
+              class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0">
+              <i data-lucide="folder-open" class="w-3.5 h-3.5 text-emerald-400"></i> Pilih Folder...
+            </button>
+            <button type="button" onclick="saveWorkspaceFromInput()"
+              class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition-all shrink-0">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Terapkan
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500">Klik "Pilih Folder..." untuk membuka file manager Windows dan memilih folder secara visual.</p>
+        </div>
+      </div>
+
+      <!-- Card 2: AI & LLM Settings -->
+      <div class="bg-[#111726] border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl text-white">
+        <h2 class="text-base font-bold text-white mb-1 tracking-tight flex items-center gap-2">
+          <i data-lucide="brain" class="w-4 h-4 text-indigo-400"></i> Pengaturan AI & Model
+        </h2>
         <p class="text-xs text-slate-400 mb-6">Pilih provider LLM untuk menganalisis momen viral dan scoring klip.</p>
 
         <form onsubmit="saveSettings(event)" class="space-y-5">
@@ -704,7 +918,7 @@
     <span id="status-workspace" class="text-slate-400">Import & Pipeline</span>
   </div>
   <div class="flex items-center gap-3">
-    <span class="text-slate-500">Storage: D:\clipgenius_data</span>
+    <span id="footer-workspace-path" class="text-slate-500">Storage: D:\clipgenius_data</span>
     <span class="text-slate-700">|</span>
     <span class="text-slate-400">Port :8089</span>
   </div>
@@ -731,7 +945,45 @@
       document.getElementById('stool-panel-subs').classList.toggle('hidden', tool !== 'subs');
       document.getElementById('stool-panel-style').classList.toggle('hidden', tool !== 'style');
       document.getElementById('stool-panel-hook').classList.toggle('hidden', tool !== 'hook');
+      document.getElementById('stool-panel-wm').classList.toggle('hidden', tool !== 'wm');
       lucide.createIcons();
+    }
+
+    function setWatermarkType(type) {
+      document.getElementById('wm-type').value = type;
+      const isText = (type === 'text');
+      const btnText = document.getElementById('wm-btn-text');
+      const btnImg = document.getElementById('wm-btn-image');
+
+      if (isText) {
+        btnText.className = "p-2 rounded-xl border border-emerald-500 bg-emerald-950/40 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all";
+        btnImg.className = "p-2 rounded-xl border border-slate-800 bg-[#0B0F19] text-slate-400 font-medium text-xs flex items-center justify-center gap-1.5 transition-all";
+        document.getElementById('wm-group-text').classList.remove('hidden');
+        document.getElementById('wm-group-image').classList.add('hidden');
+      } else {
+        btnImg.className = "p-2 rounded-xl border border-emerald-500 bg-emerald-950/40 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all";
+        btnText.className = "p-2 rounded-xl border border-slate-800 bg-[#0B0F19] text-slate-400 font-medium text-xs flex items-center justify-center gap-1.5 transition-all";
+        document.getElementById('wm-group-text').classList.add('hidden');
+        document.getElementById('wm-group-image').classList.remove('hidden');
+      }
+      updateLiveSubtitlePreview();
+    }
+
+    async function pickWatermarkLogo() {
+      try {
+        const res = await fetch(`${API_BASE}/system/pick-file`, {
+          method: 'POST',
+          headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: 'Pilih File Logo / Watermark PNG' })
+        });
+        const data = await res.json();
+        if (data.file_path) {
+          document.getElementById('wm-image-path').value = data.file_path;
+          updateLiveSubtitlePreview();
+        }
+      } catch (err) {
+        alert('Gagal memilih file logo: ' + err.message);
+      }
     }
 
     // Source Type Switcher (URL vs File)
@@ -1001,19 +1253,47 @@
         renderStudioTranscript(editingTranscriptWords);
 
         // Timeline timecode listener
+        let currentChunkIndex = -1;
         video.ontimeupdate = () => {
           const cur = video.currentTime;
           const dur = video.duration || (clip.end_s - clip.start_s) || 1;
           document.getElementById('timeline-timecode').innerText = `${formatSeconds(cur)} / ${formatSeconds(dur)}`;
           document.getElementById('timeline-scrubber').value = (cur / dur) * 100;
 
-          // Find active subtitle text with offset
+          // Find active subtitle text with chunking & animation support
           if (editingTranscriptWords && editingTranscriptWords.length) {
             const offset = parseFloat(document.getElementById('sub-offset-s').value || 0);
             const relCur = clip.start_s + cur - offset;
-            const activeWord = editingTranscriptWords.find(w => relCur >= w.start && relCur <= w.end);
-            if (activeWord) {
-              document.getElementById('editor-sub-text').innerText = (activeWord.text || activeWord.word || '').toUpperCase();
+            const chunkEl = document.getElementById('studio-sub-chunk');
+            const chunkSize = chunkEl ? Math.max(1, parseInt(chunkEl.value) || 1) : 1;
+            const animEl = document.getElementById('studio-sub-anim');
+            const animType = animEl ? animEl.value : 'pop';
+
+            // Find which word index is active
+            const activeIdx = editingTranscriptWords.findIndex(w => relCur >= w.start && relCur <= w.end);
+            const textSpan = document.getElementById('editor-sub-text');
+
+            if (activeIdx !== -1) {
+              const chunkIdx = Math.floor(activeIdx / chunkSize);
+              const startIdx = chunkIdx * chunkSize;
+              const endIdx = Math.min(startIdx + chunkSize, editingTranscriptWords.length);
+              const chunkWords = editingTranscriptWords.slice(startIdx, endIdx);
+              const combinedText = chunkWords.map(w => (w.text || w.word || '').trim()).join(' ').toUpperCase();
+
+              if (chunkIdx !== currentChunkIndex) {
+                currentChunkIndex = chunkIdx;
+                textSpan.innerText = combinedText;
+
+                // Re-trigger CSS animation
+                textSpan.classList.remove('anim-pop', 'anim-bounce', 'anim-fade', 'anim-slide_up');
+                if (animType && animType !== 'none') {
+                  void textSpan.offsetWidth; // force reflow
+                  textSpan.classList.add(`anim-${animType}`);
+                }
+              }
+            } else {
+              // Check if in gap between chunks
+              currentChunkIndex = -1;
             }
           }
         };
@@ -1044,8 +1324,40 @@
           if (s.size && subFontSizeEl) subFontSizeEl.value = s.size;
           if (s.pos_y && subPosYEl) subPosYEl.value = s.pos_y;
           if (subOffsetEl) subOffsetEl.value = (s.offset_s !== undefined ? s.offset_s : 0.0);
+          if (s.words_per_chunk) {
+            const chunkEl = document.getElementById('studio-sub-chunk');
+            if (chunkEl) chunkEl.value = s.words_per_chunk;
+          }
+          if (s.animation) {
+            const animEl = document.getElementById('studio-sub-anim');
+            if (animEl) animEl.value = s.animation;
+          }
+          if (s.glow !== undefined) {
+            const glowEl = document.getElementById('sub-glow-enable');
+            if (glowEl) glowEl.checked = !!s.glow;
+          }
         } else {
           if (subOffsetEl) subOffsetEl.value = 0.0;
+        }
+
+        // Restore watermark if saved
+        if (clip.watermark) {
+          try {
+            const wm = typeof clip.watermark === 'string' ? JSON.parse(clip.watermark) : clip.watermark;
+            const wmEnableEl = document.getElementById('wm-enable');
+            if (wmEnableEl) wmEnableEl.checked = !!wm.enabled;
+            if (wm.type) setWatermarkType(wm.type);
+            if (wm.text && document.getElementById('wm-text')) document.getElementById('wm-text').value = wm.text;
+            if (wm.image_path && document.getElementById('wm-image-path')) document.getElementById('wm-image-path').value = wm.image_path;
+            if (wm.position && document.getElementById('wm-position')) document.getElementById('wm-position').value = wm.position;
+            if (wm.opacity !== undefined && document.getElementById('wm-opacity')) document.getElementById('wm-opacity').value = wm.opacity;
+            if (wm.font_size && document.getElementById('wm-size')) document.getElementById('wm-size').value = wm.font_size;
+          } catch (e) {
+            console.warn('Failed to parse watermark data:', e);
+          }
+        } else {
+          const wmEnableEl = document.getElementById('wm-enable');
+          if (wmEnableEl) wmEnableEl.checked = false;
         }
 
         updateLiveSubtitlePreview();
@@ -1152,6 +1464,91 @@
       }
     }
 
+    function applyStudioPreset(presetKey) {
+      const presets = {
+        bold_yellow: {
+          font: "'Montserrat', sans-serif",
+          fontName: 'Montserrat',
+          color: '#facc15',
+          enableBg: false,
+          colorBg: '#000000',
+          size: 26,
+          posY: 18,
+          anim: 'pop',
+          chunk: 1,
+          glow: false
+        },
+        neon_glow: {
+          font: "'Montserrat', sans-serif",
+          fontName: 'Montserrat',
+          color: '#22d3ee',
+          enableBg: false,
+          colorBg: '#000000',
+          size: 26,
+          posY: 18,
+          anim: 'pop',
+          chunk: 1,
+          glow: true
+        },
+        creator_pop: {
+          font: "'Montserrat', sans-serif",
+          fontName: 'Montserrat',
+          color: '#f43f5e',
+          enableBg: false,
+          colorBg: '#000000',
+          size: 26,
+          posY: 18,
+          anim: 'bounce',
+          chunk: 1,
+          glow: false
+        },
+        clean_white: {
+          font: "'Inter', sans-serif",
+          fontName: 'Inter',
+          color: '#ffffff',
+          enableBg: false,
+          colorBg: '#000000',
+          size: 24,
+          posY: 18,
+          anim: 'fade',
+          chunk: 2,
+          glow: false
+        }
+      };
+
+      const p = presets[presetKey];
+      if (!p) return;
+
+      const fontCard = Array.from(document.querySelectorAll('.font-card')).find(c => c.getAttribute('onclick') && c.getAttribute('onclick').includes(p.fontName));
+      selectFontFamily(p.font, p.fontName, fontCard);
+
+      const colorTextEl = document.getElementById('sub-color-text');
+      if (colorTextEl) colorTextEl.value = p.color;
+
+      const bgEnableEl = document.getElementById('sub-bg-enable');
+      if (bgEnableEl) bgEnableEl.checked = p.enableBg;
+
+      const colorBgEl = document.getElementById('sub-color-bg');
+      if (colorBgEl) colorBgEl.value = p.colorBg;
+
+      const fontSizeEl = document.getElementById('sub-font-size');
+      if (fontSizeEl) fontSizeEl.value = p.size;
+
+      const posYEl = document.getElementById('sub-pos-y');
+      if (posYEl) posYEl.value = p.posY;
+
+      const animEl = document.getElementById('studio-sub-anim');
+      if (animEl) animEl.value = p.anim;
+
+      const chunkEl = document.getElementById('studio-sub-chunk');
+      if (chunkEl) chunkEl.value = p.chunk;
+
+      const glowEl = document.getElementById('sub-glow-enable');
+      if (glowEl) glowEl.checked = p.glow;
+
+      updateLiveSubtitlePreview();
+    }
+
     function selectFontFamily(fontVal, fontName, btn) {
       document.getElementById('sub-font-family').value = fontVal;
       const label = document.getElementById('active-font-name');
@@ -1206,6 +1603,13 @@
         bgPickerContainer.classList.add('opacity-40', 'pointer-events-none');
       }
 
+      const enableGlow = document.getElementById('sub-glow-enable') ? document.getElementById('sub-glow-enable').checked : false;
+      const glowLabel = document.getElementById('sub-glow-label');
+      if (glowLabel) {
+        glowLabel.textContent = enableGlow ? 'Aktif (Neon)' : 'Nonaktif';
+        glowLabel.className = enableGlow ? 'text-[11px] font-mono text-emerald-400 font-bold' : 'text-[11px] font-mono text-slate-400';
+      }
+
       // Live Subtitle Overlay
       const overlay = document.getElementById('editor-sub-overlay');
       const textSpan = document.getElementById('editor-sub-text');
@@ -1214,7 +1618,12 @@
       textSpan.style.fontFamily = font;
       textSpan.style.color = colorText;
       textSpan.style.fontSize = `${size}px`;
-      textSpan.style.textShadow = '0 2px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)';
+
+      if (enableGlow) {
+        textSpan.style.textShadow = `0 0 10px ${colorText}, 0 0 20px ${colorText}, 0 2px 4px rgba(0,0,0,0.9)`;
+      } else {
+        textSpan.style.textShadow = '0 2px 4px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.9)';
+      }
 
       if (enableBg) {
         textSpan.style.backgroundColor = colorBg + 'cc';
@@ -1239,6 +1648,84 @@
           hookOverlay.classList.add('hidden');
         }
       }
+
+      // Live Watermark Overlay Preview
+      const wmEnable = document.getElementById('wm-enable') ? document.getElementById('wm-enable').checked : false;
+      const wmOverlay = document.getElementById('editor-wm-overlay');
+      const wmTextEl = document.getElementById('editor-wm-text');
+      const wmImgEl = document.getElementById('editor-wm-img');
+      const wmLabel = document.getElementById('wm-enable-label');
+
+      if (wmLabel) {
+        wmLabel.textContent = wmEnable ? 'Aktif' : 'Nonaktif';
+        wmLabel.className = wmEnable ? 'text-xs font-mono font-bold text-emerald-400' : 'text-xs font-mono font-bold text-slate-400';
+      }
+
+      if (wmOverlay) {
+        if (!wmEnable) {
+          wmOverlay.classList.add('hidden');
+        } else {
+          wmOverlay.classList.remove('hidden');
+          const wmType = document.getElementById('wm-type') ? document.getElementById('wm-type').value : 'text';
+          const pos = document.getElementById('wm-position') ? document.getElementById('wm-position').value : 'top_right';
+          const opacity = document.getElementById('wm-opacity') ? parseFloat(document.getElementById('wm-opacity').value) : 0.8;
+          const size = document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) : 24;
+
+          document.getElementById('wm-opacity-val').innerText = `${Math.round(opacity * 100)}%`;
+          document.getElementById('wm-size-val').innerText = `${size}px`;
+
+          // Reset positioning classes
+          wmOverlay.className = "absolute z-20 pointer-events-none transition-all duration-150";
+          if (pos === 'top_right') {
+            wmOverlay.style.top = '16px';
+            wmOverlay.style.right = '16px';
+            wmOverlay.style.left = 'auto';
+            wmOverlay.style.bottom = 'auto';
+          } else if (pos === 'top_left') {
+            wmOverlay.style.top = '16px';
+            wmOverlay.style.left = '16px';
+            wmOverlay.style.right = 'auto';
+            wmOverlay.style.bottom = 'auto';
+          } else if (pos === 'center_top') {
+            wmOverlay.style.top = '16px';
+            wmOverlay.style.left = '50%';
+            wmOverlay.style.transform = 'translateX(-50%)';
+            wmOverlay.style.right = 'auto';
+            wmOverlay.style.bottom = 'auto';
+          } else if (pos === 'bottom_right') {
+            wmOverlay.style.bottom = '56px';
+            wmOverlay.style.right = '16px';
+            wmOverlay.style.left = 'auto';
+            wmOverlay.style.top = 'auto';
+          } else if (pos === 'bottom_left') {
+            wmOverlay.style.bottom = '56px';
+            wmOverlay.style.left = '16px';
+            wmOverlay.style.right = 'auto';
+            wmOverlay.style.top = 'auto';
+          }
+
+          if (wmType === 'text') {
+            const rawText = (document.getElementById('wm-text') ? document.getElementById('wm-text').value : '@clipgenius') || '@clipgenius';
+            wmTextEl.classList.remove('hidden');
+            wmImgEl.classList.add('hidden');
+            wmTextEl.innerText = rawText;
+            wmTextEl.style.fontSize = `${size}px`;
+            wmTextEl.style.opacity = opacity;
+            wmTextEl.style.textShadow = '0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8)';
+          } else {
+            const imgPath = document.getElementById('wm-image-path') ? document.getElementById('wm-image-path').value : '';
+            wmTextEl.classList.add('hidden');
+            if (imgPath) {
+              wmImgEl.classList.remove('hidden');
+              wmImgEl.src = `${API_BASE}/media/watermark?path=${encodeURIComponent(imgPath)}`;
+              wmImgEl.style.width = `${size * 4}px`;
+              wmImgEl.style.opacity = opacity;
+            } else {
+              wmImgEl.classList.add('hidden');
+            }
+          }
+        }
+      }
     }
 
     async function saveClipEdits() {
@@ -1251,7 +1738,21 @@
         bg: document.getElementById('sub-bg-enable').checked ? document.getElementById('sub-color-bg').value : null,
         size: document.getElementById('sub-font-size').value,
         pos_y: document.getElementById('sub-pos-y').value,
-        offset_s: parseFloat(document.getElementById('sub-offset-s').value || 0)
+        offset_s: parseFloat(document.getElementById('sub-offset-s').value || 0),
+        words_per_chunk: parseInt(document.getElementById('studio-sub-chunk') ? document.getElementById('studio-sub-chunk').value : 1),
+        animation: document.getElementById('studio-sub-anim') ? document.getElementById('studio-sub-anim').value : 'pop',
+        glow: document.getElementById('sub-glow-enable') ? document.getElementById('sub-glow-enable').checked : false
+      };
+
+      const wmPayload = {
+        enabled: document.getElementById('wm-enable') ? document.getElementById('wm-enable').checked : false,
+        type: document.getElementById('wm-type') ? document.getElementById('wm-type').value : 'text',
+        text: document.getElementById('wm-text') ? document.getElementById('wm-text').value : '',
+        image_path: document.getElementById('wm-image-path') ? document.getElementById('wm-image-path').value : '',
+        position: document.getElementById('wm-position') ? document.getElementById('wm-position').value : 'top_right',
+        opacity: document.getElementById('wm-opacity') ? parseFloat(document.getElementById('wm-opacity').value) : 0.8,
+        font_size: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) : 24,
+        width: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) * 6 : 160
       };
 
       try {
@@ -1260,12 +1761,13 @@
           headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             hook: newHook,
-            subtitle_style: stylePayload
+            subtitle_style: stylePayload,
+            watermark: wmPayload
           })
         });
         const d = await res.json();
         if (d.ok) {
-          alert('Penyesuaian klip dan subtitle berhasil disimpan!');
+          alert('Penyesuaian klip, subtitle, dan watermark berhasil disimpan!');
         }
       } catch (err) {
         alert('Gagal menyimpan penyesuaian: ' + err.message);
@@ -1280,6 +1782,17 @@
       const outDir = prompt('Masukkan folder tujuan ekspor di komputer Anda:', 'C:\\Users\\elbasrie\\Videos\\ClipGenius_Export');
       if (!outDir) return;
 
+      const wmPayload = {
+        enabled: document.getElementById('wm-enable') ? document.getElementById('wm-enable').checked : false,
+        type: document.getElementById('wm-type') ? document.getElementById('wm-type').value : 'text',
+        text: document.getElementById('wm-text') ? document.getElementById('wm-text').value : '',
+        image_path: document.getElementById('wm-image-path') ? document.getElementById('wm-image-path').value : '',
+        position: document.getElementById('wm-position') ? document.getElementById('wm-position').value : 'top_right',
+        opacity: document.getElementById('wm-opacity') ? parseFloat(document.getElementById('wm-opacity').value) : 0.8,
+        font_size: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) : 24,
+        width: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) * 6 : 160
+      };
+
       try {
         const res = await fetch(`${API_BASE}/jobs/${studioSelectedJobId}/export`, {
           method: 'POST',
@@ -1288,7 +1801,8 @@
             output_dir: outDir,
             clip_ids: [activeEditingClip.id],
             aspect: '9:16',
-            resolution: '1080p'
+            resolution: '1080p',
+            watermark: wmPayload
           })
         });
         const data = await res.json();
@@ -1430,9 +1944,9 @@
         const countEl = document.getElementById('opt-count');
         const sttEl = document.getElementById('opt-stt');
         const aspectEl = document.getElementById('opt-aspect') || document.getElementById('opt-ratio');
-        const subPresetEl = document.getElementById('opt-subtitle') || document.getElementById('opt-style');
         const reframeEl = document.getElementById('opt-reframe') || document.getElementById('opt-tracking');
         const ytSubsEl = document.getElementById('opt-yt-subs') || document.getElementById('opt-use-yt-subs');
+        const dualFaceEl = document.getElementById('opt-dual-face');
 
         const payload = {
           url: url || null,
@@ -1441,7 +1955,11 @@
           clip_count: countEl ? parseInt(countEl.value) : 5,
           model_tier: sttEl ? sttEl.value : 'fast',
           aspect: aspectEl ? aspectEl.value : '9:16',
-          subtitle_preset: subPresetEl ? subPresetEl.value : 'bold_yellow',
+          subtitle_preset: 'bold_yellow',
+          subtitle_animation: 'pop',
+          words_per_chunk: 1,
+          subtitle_glow: false,
+          split_dual_screen: dualFaceEl ? dualFaceEl.checked : true,
           reframe: reframeEl ? reframeEl.checked : true,
           use_youtube_subs: ytSubsEl ? ytSubsEl.checked : true
         };
@@ -1739,6 +2257,14 @@
 
     async function loadSettings() {
       try {
+        // Load Workspace directory
+        const wsRes = await fetch(API_BASE + '/settings/workspace', { headers: AUTH_HEADER });
+        const wsData = await wsRes.json();
+        if (wsData && wsData.value && wsData.value.path) {
+          updateWorkspaceUI(wsData.value.path);
+        }
+
+        // Load LLM settings
         const res = await fetch(API_BASE + '/settings/llm', { headers: AUTH_HEADER });
         const data = await res.json();
         const val = data.value || {};
@@ -1752,6 +2278,80 @@
           toggleProviderInputs();
         }
       } catch (e) { console.error(e); }
+    }
+
+    function updateWorkspaceUI(path) {
+      if (!path) return;
+      const titleEl = document.getElementById('titlebar-workspace-path');
+      if (titleEl) titleEl.textContent = path;
+      const sideEl = document.getElementById('sidebar-workspace-path');
+      if (sideEl) sideEl.textContent = path;
+      const footEl = document.getElementById('footer-workspace-path');
+      if (footEl) footEl.textContent = 'Storage: ' + path;
+      const inputEl = document.getElementById('set-workspace-input');
+      if (inputEl) inputEl.value = path;
+    }
+
+    async function pickNativeFolder() {
+      try {
+        const res = await fetch(API_BASE + '/system/pick-folder', {
+          method: 'POST',
+          headers: AUTH_HEADER
+        });
+        const data = await res.json();
+        if (!data.canceled && data.folder) {
+          return data.folder;
+        }
+        return null;
+      } catch (err) {
+        alert('Gagal membuka dialog pilih folder: ' + err.message);
+        return null;
+      }
+    }
+
+    async function browseAndSetWorkspace() {
+      const folder = await pickNativeFolder();
+      if (folder) {
+        await applyWorkspacePath(folder);
+      }
+    }
+
+    async function browseFolderForInput(inputId) {
+      const folder = await pickNativeFolder();
+      if (folder) {
+        const el = document.getElementById(inputId);
+        if (el) el.value = folder;
+      }
+    }
+
+    async function saveWorkspaceFromInput() {
+      const el = document.getElementById('set-workspace-input');
+      if (!el || !el.value.trim()) {
+        alert('Masukkan path direktori ruang kerja.');
+        return;
+      }
+      await applyWorkspacePath(el.value.trim());
+    }
+
+    async function applyWorkspacePath(path) {
+      try {
+        const res = await fetch(API_BASE + '/settings/workspace', {
+          method: 'PUT',
+          headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: path })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          updateWorkspaceUI(data.path || path);
+          alert('Ruang kerja berhasil diubah ke: ' + (data.path || path));
+          // Refresh job list if on jobs tab
+          loadJobs();
+        } else {
+          alert('Gagal mengubah ruang kerja.');
+        }
+      } catch (err) {
+        alert('Gagal mengubah ruang kerja: ' + err.message);
+      }
     }
 
     async function saveSettings(e) {
@@ -1777,6 +2377,7 @@
 
     // Init
     checkHealth();
+    loadSettings();
     lucide.createIcons();
 
     // Auto-detect active running job on load

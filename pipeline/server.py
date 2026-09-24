@@ -15,7 +15,7 @@ import threading
 import time
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Query
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
@@ -71,6 +71,11 @@ class CreateJob(BaseModel):
     aspect: str = Field(default="9:16")
     resolution: str = Field(default="1080p")
     subtitle_preset: str = Field(default="classic_white")
+    words_per_chunk: int = Field(default=1, ge=1, le=10)
+    subtitle_animation: str = Field(default="pop")
+    subtitle_glow: bool = False
+    subtitle_font_size: int | None = None
+    split_dual_screen: bool = True
     hook_overlay: bool = True
     reframe: bool = True
     llm_provider: str | None = None
@@ -88,6 +93,7 @@ class ClipPatch(BaseModel):
     subtitle_preset: str | None = None
     subtitle_style: dict | None = None
     subtitle_edits: list[dict] | None = None
+    watermark: dict | None = None
 
 
 class ExportRequest(BaseModel):
@@ -95,6 +101,7 @@ class ExportRequest(BaseModel):
     aspect: str = "9:16"
     resolution: str = "1080p"
     clip_ids: list[str] | None = None
+    watermark: dict | None = None
 
 
 # --------------------------------------------------------------------------- job runner
@@ -247,6 +254,7 @@ def run_job(job_id: str) -> None:
                         video_path, reframed, scene_strategy=strat,
                         progress_cb=lambda pct: _progress(job_id, "clip", pct * 100,
                                                           "Reframe 9:16"),
+                        allow_split_screen=bool(opts.get("split_dual_screen", True))
                     )
                 bookmark["reframed"] = str(reframed)
 
@@ -276,10 +284,21 @@ def run_job(job_id: str) -> None:
                                   cm["file"])
                 srt = work / f"clip_{cm['idx']}.srt"
                 tc = {"segments": _slice_transcript(transcript, cm["start_s"], cm["end_s"])}
-                if sub_mod.generate_srt(tc, cm["start_s"], cm["end_s"], srt, word_by_word=True):
+                chunk_n = int(opts.get("words_per_chunk", 1))
+                anim = str(opts.get("subtitle_animation", "pop"))
+                if sub_mod.generate_srt(tc, cm["start_s"], cm["end_s"], srt,
+                                        word_by_word=True, words_per_chunk=chunk_n,
+                                        animation=anim):
+                    sub_style = {}
+                    if opts.get("subtitle_glow"):
+                        sub_style["glow"] = True
+                    if opts.get("subtitle_font_size"):
+                        sub_style["fontsize"] = int(opts["subtitle_font_size"])
                     db.update_clip(cid, subtitle={"srt": str(srt),
-                                                  "preset": opts.get("subtitle_preset",
-                                                                     "classic_white")})
+                                                  "preset": opts.get("subtitle_preset", "classic_white"),
+                                                  "words_per_chunk": chunk_n,
+                                                  "animation": anim,
+                                                  "style": sub_style})
                 thumb = work / f"thumb_{cm['idx']}.jpg"
                 if clip_mod.make_thumbnail(cm["file"], thumb):
                     db.update_clip(cid, subtitle={**({"srt": str(srt)} if srt.exists() else {}),
@@ -388,13 +407,67 @@ def health() -> dict:
 
 @app.get("/settings/{key}")
 def read_setting(key: str) -> dict:
+    if key == "workspace":
+        return {"key": "workspace", "value": {"path": str(config.ROOT.resolve())}}
     return {"key": key, "value": db.get_setting(key)}
 
 
 @app.put("/settings/{key}")
 async def write_setting(key: str, request: Request) -> dict:
-    db.set_setting(key, await request.json())
+    val = await request.json()
+    if key == "workspace":
+        p = val.get("path")
+        if not p:
+            raise HTTPException(400, "path wajib diisi")
+        new_path = Path(p).resolve()
+        new_path.mkdir(parents=True, exist_ok=True)
+        config.set_root(new_path)
+        db.close()
+        db.connect()
+        return {"ok": True, "path": str(new_path)}
+    db.set_setting(key, val)
     return {"ok": True}
+
+
+@app.post("/system/pick-folder")
+def pick_folder() -> dict:
+    """Open native OS folder selection dialog."""
+    # 1. Try PowerShell FolderBrowserDialog (native Win32 dialog on Windows)
+    try:
+        ps_cmd = (
+            "Add-Type -AssemblyName System.Windows.Forms; "
+            "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
+            "$f.Description = 'Pilih Folder Ruang Kerja ClipGenius'; "
+            "$f.ShowNewFolderButton = $true; "
+            "if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"
+        )
+        res = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps_cmd],
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        folder = res.stdout.strip()
+        if folder:
+            return {"folder": folder, "canceled": False}
+        return {"folder": "", "canceled": True}
+    except Exception:
+        pass
+
+    # 2. Fallback to Tkinter filedialog
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        folder = filedialog.askdirectory(title="Pilih Folder Ruang Kerja ClipGenius")
+        root.destroy()
+        if folder:
+            return {"folder": str(Path(folder).resolve()), "canceled": False}
+        return {"folder": "", "canceled": True}
+    except Exception as e:
+        raise HTTPException(500, f"Gagal membuka dialog folder: {e}")
 
 
 @app.post("/jobs")
@@ -473,6 +546,10 @@ def patch_clip(clip_id: str, payload: ClipPatch) -> dict:
     edits = fields.pop("subtitle_edits", None)
     preset = fields.pop("subtitle_preset", None)
     style = fields.pop("subtitle_style", None)
+    wm = fields.pop("watermark", None)
+
+    if wm is not None:
+        fields["watermark"] = json.dumps(wm)
 
     if fields:
         db.update_clip(clip_id, **fields)
@@ -487,11 +564,17 @@ def patch_clip(clip_id: str, payload: ClipPatch) -> dict:
     if style:
         sub["style"] = style
         offset_s = float(style.get("offset_s", 0.0))
+        chunk_n = int(style.get("words_per_chunk", sub.get("words_per_chunk", 1)))
+        anim = str(style.get("animation", sub.get("animation", "pop")))
+        sub["words_per_chunk"] = chunk_n
+        sub["animation"] = anim
         srt_path = sub.get("srt")
         if srt_path and stored.get("transcript"):
             try:
                 tc = {"segments": json.loads(stored["transcript"])}
-                sub_mod.generate_srt(tc, stored["start_s"], stored["end_s"], srt_path, time_offset=offset_s)
+                sub_mod.generate_srt(tc, stored["start_s"], stored["end_s"], srt_path,
+                                    time_offset=offset_s, words_per_chunk=chunk_n,
+                                    animation=anim)
             except Exception as e:
                 logger.warning("Failed to regenerate SRT with offset: %s", e)
 
@@ -602,6 +685,14 @@ def serve_media(job_id: str, name: str) -> FileResponse:
     return FileResponse(str(path))
 
 
+@app.get("/media/watermark")
+def serve_watermark(path: str = Query(...)) -> FileResponse:
+    p = Path(path).resolve()
+    if not p.exists() or not p.is_file():
+        raise HTTPException(404, "Logo watermark tidak ditemukan")
+    return FileResponse(str(p))
+
+
 @app.post("/jobs/{job_id}/export")
 def export_job(job_id: str, payload: ExportRequest) -> dict:
     job = db.get_job(job_id)
@@ -619,14 +710,22 @@ def export_job(job_id: str, payload: ExportRequest) -> dict:
     items = []
     for c in clips:
         sub = c.get("subtitle") or {}
+        clip_wm = None
+        if c.get("watermark"):
+            try:
+                clip_wm = json.loads(c["watermark"]) if isinstance(c["watermark"], str) else c["watermark"]
+            except Exception:
+                pass
         items.append({**c, "source_video": bookmark.get("video_path"),
                       "srt_path": sub.get("srt"),
                       "subtitle_preset": sub.get("preset", "classic_white"),
-                      "subtitle_style": sub.get("style")})
+                      "subtitle_style": sub.get("style"),
+                      "watermark": clip_wm or payload.watermark})
 
     results = export_mod.export_batch(
         items, payload.output_dir, title, aspect=payload.aspect,
         resolution=payload.resolution, reframed_source=reframed,
+        watermark=payload.watermark,
     )
     ok = [r for r in results if r["file"]]
     return {"exported": len(ok), "failed": len(results) - len(ok), "results": results}

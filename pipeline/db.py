@@ -73,6 +73,10 @@ def connect() -> sqlite3.Connection:
             _conn.execute("PRAGMA journal_mode=WAL")
             _conn.execute("PRAGMA synchronous=NORMAL")
             _conn.executescript(SCHEMA)
+            try:
+                _conn.execute("ALTER TABLE clips ADD COLUMN watermark TEXT NOT NULL DEFAULT ''")
+            except Exception:
+                pass
             _conn.commit()
         return _conn
 

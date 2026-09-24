@@ -9,6 +9,15 @@ import multiprocessing
 import uvicorn
 
 # Set root directory for assets
+from pathlib import Path
+_app_cfg = Path(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")) / "ClipGenius" / "workspace.txt"
+if _app_cfg.exists():
+    try:
+        _saved = _app_cfg.read_text("utf-8").strip()
+        if _saved and Path(_saved).exists():
+            os.environ.setdefault("CLIPGENIUS_HOME", _saved)
+    except Exception:
+        pass
 os.environ.setdefault("CLIPGENIUS_HOME", r"D:\clipgenius_data")
 os.environ.setdefault("CLIPGENIUS_PORT", "8089")
 os.environ.setdefault("CLIPGENIUS_TOKEN", "dev-local-token")

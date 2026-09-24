@@ -12,6 +12,15 @@ APP_NAME = "ClipGenius"
 def _root() -> Path:
     if os.environ.get("CLIPGENIUS_HOME"):
         return Path(os.environ["CLIPGENIUS_HOME"])
+    # Check persistent settings file if exists
+    settings_file = Path(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")) / APP_NAME / "workspace.txt"
+    if settings_file.exists():
+        try:
+            saved = settings_file.read_text("utf-8").strip()
+            if saved and Path(saved).exists():
+                return Path(saved)
+        except Exception:
+            pass
     if os.path.exists("D:\\"):
         return Path("D:/clipgenius_data")
     base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")
@@ -24,6 +33,23 @@ LOG_DIR = ROOT / "logs"
 DB_PATH = ROOT / "clipgenius.db"
 FONTS_DIR = Path(__file__).resolve().parent.parent / "resources" / "fonts"
 BIN_DIR = Path(__file__).resolve().parent.parent / "resources" / "bin"
+
+
+def set_root(new_path: str | Path) -> Path:
+    global ROOT, WORK_DIR, LOG_DIR, DB_PATH
+    p = Path(new_path).resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    ROOT = p
+    WORK_DIR = ROOT / "work"
+    LOG_DIR = ROOT / "logs"
+    DB_PATH = ROOT / "clipgenius.db"
+    os.environ["CLIPGENIUS_HOME"] = str(p)
+    ensure_dirs()
+    # Save to persistent file
+    cfg_dir = Path(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.local/share")) / APP_NAME
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    (cfg_dir / "workspace.txt").write_text(str(p), encoding="utf-8")
+    return ROOT
 
 DEFAULT_CLIP_MIN_S = 15
 DEFAULT_CLIP_MAX_S = 30

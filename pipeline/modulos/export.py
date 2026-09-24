@@ -58,6 +58,7 @@ def export_clip(
     custom_style: dict | None = None,
     hook_text: str = "",
     reframed_source: str | Path | None = None,
+    watermark: dict | None = None,
     progress_cb: Callable[[float], None] | None = None,
 ) -> Path:
     """Encode one clip. `reframed_source` is an already-9:16 file covering the whole
@@ -87,12 +88,70 @@ def export_clip(
             vf = (f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,"
                   f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
 
-    # Stage 2: subtitles + hook, then final encode.
+    # Stage 2: subtitles + hook + watermark, then final encode.
     filters = [vf]
+    extra_inputs = []
+
     if srt_path and Path(srt_path).exists():
         filters.append(_subtitle_filter(srt_path, preset, custom_style))
     if hook_text:
         filters.append(_hook_filter(hook_text))
+
+    # Watermark Handling
+    if watermark and watermark.get("enabled"):
+        wm_type = watermark.get("type", "text")
+        opacity = float(watermark.get("opacity", 0.8))
+        pos = watermark.get("position", "top_right")
+
+        # Position mappings for FFmpeg
+        pos_map = {
+            "top_left": ("40", "40"),
+            "top_right": ("w-tw-40", "40"),
+            "bottom_left": ("40", "h-th-180"),
+            "bottom_right": ("w-tw-40", "h-th-180"),
+            "center_top": ("(w-tw)/2", "50"),
+        }
+        x_expr, y_expr = pos_map.get(pos, ("w-tw-40", "40"))
+
+        if wm_type == "text" and watermark.get("text"):
+            raw_text = str(watermark.get("text", "")).strip()
+            safe_text = (raw_text.replace("\\", "").replace("'", "")
+                         .replace(":", "\\:").replace("%", "").replace(",", "\\,"))
+            font_size = int(watermark.get("font_size", 32))
+            alpha_hex = f"{int(opacity * 255):02x}"
+            font_color = f"white@{opacity:.2f}"
+            filters.append(
+                f"drawtext=text='{safe_text}':fontcolor={font_color}:fontsize={font_size}:"
+                f"shadowcolor=black@{max(0.2, opacity*0.8):.2f}:shadowx=2:shadowy=2:x={x_expr}:y={y_expr}"
+            )
+        elif wm_type == "image" and watermark.get("image_path") and Path(watermark["image_path"]).exists():
+            img_path = Path(watermark["image_path"])
+            extra_inputs.extend(["-i", str(img_path)])
+            scale_w = int(watermark.get("width", 160))
+            ov_pos = {
+                "top_left": ("40", "40"),
+                "top_right": ("W-w-40", "40"),
+                "bottom_left": ("40", "H-h-180"),
+                "bottom_right": ("W-w-40", "H-h-180"),
+                "center_top": ("(W-w)/2", "50"),
+            }
+            ox, oy = ov_pos.get(pos, ("W-w-40", "40"))
+            # We can use filter_complex when extra_inputs present
+            filter_chain = ",".join(filters)
+            fc = f"[0:v]{filter_chain}[base];[1:v]scale={scale_w}:-1,format=rgba,colorchannelmixer=aa={opacity:.2f}[wm];[base][wm]overlay={ox}:{oy}[outv]"
+            cmd = [ffmpeg(), "-y", "-loglevel", "error", "-i", str(tmp_cut), *extra_inputs,
+                   "-filter_complex", fc, "-map", "[outv]", "-map", "0:a?",
+                   "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+                   "-b:v", "10M", "-maxrate", "14M", "-bufsize", "20M",
+                   "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "256k",
+                   "-movflags", "+faststart", str(output_path)]
+            r = subprocess.run(cmd, capture_output=True, text=True)
+            tmp_cut.unlink(missing_ok=True)
+            if r.returncode != 0:
+                raise RuntimeError(f"export failed for clip {start_s:.2f}-{end_s:.2f}: {r.stderr[-400:]}")
+            if progress_cb:
+                progress_cb(1.0)
+            return output_path
 
     cmd = [ffmpeg(), "-y", "-loglevel", "error", "-i", str(tmp_cut),
            "-vf", ",".join(filters),
@@ -130,6 +189,7 @@ def export_batch(
     aspect: str = "9:16",
     resolution: str = "1080p",
     reframed_source: str | Path | None = None,
+    watermark: dict | None = None,
     progress_cb: Callable[[int, int, str], None] | None = None,
 ) -> list[dict]:
     """Encode every included clip. Returns [{clip_id, file, name, error}]."""
@@ -142,6 +202,7 @@ def export_batch(
         dest = unique_path(output_dir / name)
         entry = {"clip_id": c.get("id"), "name": dest.name, "file": "", "error": ""}
         try:
+            clip_wm = c.get("watermark") or watermark
             export_clip(
                 c.get("source_video") or c.get("file") or "",
                 c["start_s"], c["end_s"], dest,
@@ -149,6 +210,7 @@ def export_batch(
                 srt_path=c.get("srt_path"), preset=c.get("subtitle_preset", "classic_white"),
                 custom_style=c.get("subtitle_style"), hook_text=c.get("hook", ""),
                 reframed_source=reframed_source,
+                watermark=clip_wm,
             )
             entry["file"] = str(dest)
         except Exception as e:  # noqa: BLE001 — per-clip isolation, batch must continue
