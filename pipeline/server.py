@@ -11,6 +11,7 @@ import logging
 import os
 import queue
 import shutil
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -100,6 +101,7 @@ class ExportRequest(BaseModel):
     output_dir: str
     aspect: str = "9:16"
     resolution: str = "1080p"
+    profile: str | None = None
     clip_ids: list[str] | None = None
     watermark: dict | None = None
 
@@ -244,33 +246,40 @@ def run_job(job_id: str) -> None:
         if "clip" not in done or not clips_meta:
             db.delete_clips(job_id)
             clips_meta = []
-            reframed = None
-            if opts.get("reframe", True) and opts.get("aspect", "9:16") == "9:16":
-                _progress(job_id, "clip", 5, "Reframe ke 9:16 (tracking subjek)")
-                reframed = work / "reframed.mp4"
-                if not reframed.exists():
-                    strat = clip_mod.scene_strategy_for(video_path)
+            should_reframe = opts.get("reframe", True) and opts.get("aspect", "9:16") == "9:16"
+
+            for i, s in enumerate(shorts, start=1):
+                raw_cut = work / f"raw_clip_{i}.mp4"
+                final_cut = work / f"clip_{i}.mp4"
+
+                # 1. Precise cut segment directly from source (very fast)
+                _progress(job_id, "clip", ((i - 0.5) / len(shorts)) * 100,
+                          f"Memotong klip {i}/{len(shorts)} (detik {s['start']:.0f}-{s['end']:.0f})")
+                clip_mod.cut_clip(video_path, s["start"], s["end"], raw_cut)
+
+                # 2. Reframe only this segment to vertical 9:16 if requested
+                if should_reframe:
+                    _progress(job_id, "clip", (i / len(shorts)) * 100,
+                              f"Tracking & Reframe klip {i}/{len(shorts)} [GPU NVENC]")
+                    strat = clip_mod.scene_strategy_for(raw_cut)
                     clip_mod.reframe_to_vertical(
-                        video_path, reframed, scene_strategy=strat,
-                        progress_cb=lambda pct: _progress(job_id, "clip", pct * 100,
-                                                          "Reframe 9:16"),
+                        raw_cut, final_cut, scene_strategy=strat,
                         allow_split_screen=bool(opts.get("split_dual_screen", True))
                     )
-                bookmark["reframed"] = str(reframed)
+                    raw_cut.unlink(missing_ok=True)
+                else:
+                    raw_cut.replace(final_cut)
 
-            source_for_cut = reframed or video_path
-            for i, s in enumerate(shorts, start=1):
-                _progress(job_id, "clip", (i / len(shorts)) * 100,
-                          f"Memotong klip {i}/{len(shorts)}")
-                cut = work / f"clip_{i}.mp4"
-                clip_mod.cut_clip(source_for_cut, s["start"], s["end"], cut)
+                # 3. Hook overlay if configured
                 if opts.get("hook_overlay", True) and s.get("hook"):
                     hooked = work / f"clip_{i}_hook.mp4"
-                    clip_mod.text_overlay(cut, s["hook"], hooked)
-                    cut = hooked
+                    clip_mod.text_overlay(final_cut, s["hook"], hooked)
+                    final_cut = hooked
+
                 clips_meta.append({"idx": i, "start_s": s["start"], "end_s": s["end"],
                                    "score": s.get("score", 0), "hook": s.get("hook", ""),
-                                   "title": s.get("title", ""), "file": str(cut)})
+                                   "title": s.get("title", ""), "file": str(final_cut)})
+
             bookmark["clips"] = clips_meta
             db.update_job(job_id, bookmark=bookmark)
             done.add("clip")
@@ -403,6 +412,32 @@ def health() -> dict:
     return {"ok": True, "worker_alive": bool(_WORKER and _WORKER.is_alive()),
             "queued": _jobs.qsize(), "llm": llm.provider_status(),
             "ffmpeg": config.ffmpeg(), "thread_stacks": stacks}
+
+
+@app.get("/system/hardware-status")
+def hardware_status() -> dict:
+    """Return GPU and hardware telemetry for UI sidebar/header."""
+    gpu_info = {"available": False, "name": "N/A", "utilization": 0, "vram_used_mb": 0, "vram_total_mb": 0, "temp_c": 0}
+    try:
+        nvsmi = r"C:\Windows\System32\nvidia-smi.exe"
+        cmd = [nvsmi if Path(nvsmi).exists() else "nvidia-smi",
+               "--query-gpu=name,memory.total,memory.used,utilization.gpu,temperature.gpu",
+               "--format=csv,noheader,nounits"]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+        if r.returncode == 0 and r.stdout.strip():
+            parts = [p.strip() for p in r.stdout.strip().split(",")]
+            if len(parts) >= 5:
+                gpu_info = {
+                    "available": True,
+                    "name": parts[0],
+                    "vram_total_mb": int(parts[1]),
+                    "vram_used_mb": int(parts[2]),
+                    "utilization": int(parts[3]),
+                    "temp_c": int(parts[4]),
+                }
+    except Exception as e:
+        logger.error(f"hardware_status error: {e}")
+    return {"gpu": gpu_info}
 
 
 @app.get("/settings/{key}")
@@ -566,15 +601,20 @@ def patch_clip(clip_id: str, payload: ClipPatch) -> dict:
         offset_s = float(style.get("offset_s", 0.0))
         chunk_n = int(style.get("words_per_chunk", sub.get("words_per_chunk", 1)))
         anim = str(style.get("animation", sub.get("animation", "pop")))
+        kw_pop = bool(style.get("keyword_pop", sub.get("keyword_pop", False)))
+        hl_color = str(style.get("highlight_color", sub.get("highlight_color", "#22c55e")))
         sub["words_per_chunk"] = chunk_n
         sub["animation"] = anim
+        sub["keyword_pop"] = kw_pop
+        sub["highlight_color"] = hl_color
         srt_path = sub.get("srt")
         if srt_path and stored.get("transcript"):
             try:
                 tc = {"segments": json.loads(stored["transcript"])}
                 sub_mod.generate_srt(tc, stored["start_s"], stored["end_s"], srt_path,
                                     time_offset=offset_s, words_per_chunk=chunk_n,
-                                    animation=anim)
+                                    animation=anim, keyword_pop=kw_pop,
+                                    highlight_color=hl_color)
             except Exception as e:
                 logger.warning("Failed to regenerate SRT with offset: %s", e)
 
@@ -724,8 +764,8 @@ def export_job(job_id: str, payload: ExportRequest) -> dict:
 
     results = export_mod.export_batch(
         items, payload.output_dir, title, aspect=payload.aspect,
-        resolution=payload.resolution, reframed_source=reframed,
-        watermark=payload.watermark,
+        resolution=payload.resolution, profile=payload.profile,
+        reframed_source=reframed, watermark=payload.watermark,
     )
     ok = [r for r in results if r["file"]]
     return {"exported": len(ok), "failed": len(results) - len(ok), "results": results}

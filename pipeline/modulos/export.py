@@ -13,13 +13,54 @@ from typing import Callable, Iterable
 from ..config import ffmpeg
 from . import clip as clip_mod
 from . import subtitle as sub_mod
+from .clip import _nvenc_available
 from .media import get_resolution
 
 RESOLUTIONS = {
     "1080p": {"portrait": (1080, 1920), "landscape": (1920, 1080)},
     "720p": {"portrait": (720, 1280), "landscape": (1280, 720)},
+    "4k": {"portrait": (2160, 3840), "landscape": (3840, 2160)},
 }
 ASPECTS = ("9:16", "16:9")
+
+EXPORT_PROFILES = {
+    "tiktok": {
+        "label": "TikTok / Instagram Reels",
+        "aspect": "9:16",
+        "resolution": "1080p",
+        "fps": 30,
+        "bitrate": "8M",
+        "crf": 19,
+        "preset": "medium",
+    },
+    "yt_shorts": {
+        "label": "YouTube Shorts (High Bitrate)",
+        "aspect": "9:16",
+        "resolution": "1080p",
+        "fps": 60,
+        "bitrate": "12M",
+        "crf": 18,
+        "preset": "fast",
+    },
+    "landscape_hd": {
+        "label": "YouTube Landscape (1080p)",
+        "aspect": "16:9",
+        "resolution": "1080p",
+        "fps": 30,
+        "bitrate": "10M",
+        "crf": 18,
+        "preset": "medium",
+    },
+    "quick_draft": {
+        "label": "Quick Draft (720p Ringan)",
+        "aspect": "9:16",
+        "resolution": "720p",
+        "fps": 30,
+        "bitrate": "4M",
+        "crf": 23,
+        "preset": "veryfast",
+    }
+}
 
 _ILLEGAL = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 
@@ -53,6 +94,7 @@ def export_clip(
     *,
     aspect: str = "9:16",
     resolution: str = "1080p",
+    profile: str | None = None,
     srt_path: str | Path | None = None,
     preset: str = "classic_white",
     custom_style: dict | None = None,
@@ -65,6 +107,21 @@ def export_clip(
     timeline (cheaper than reframing per clip when the job produced several)."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    prof = EXPORT_PROFILES.get(profile or "") if profile else None
+    if prof:
+        aspect = prof.get("aspect", aspect)
+        resolution = prof.get("resolution", resolution)
+        fps = prof.get("fps", 30)
+        crf = str(prof.get("crf", 18))
+        bitrate = prof.get("bitrate", "10M")
+        enc_preset = prof.get("preset", "medium")
+    else:
+        fps = 30
+        crf = "18"
+        bitrate = "10M"
+        enc_preset = "medium"
+
     if aspect not in ASPECTS:
         raise ValueError(f"aspect must be one of {ASPECTS}, got {aspect!r}")
     if resolution not in RESOLUTIONS:
@@ -77,16 +134,16 @@ def export_clip(
     tmp_cut = output_path.with_suffix(".cut.mp4")
     if aspect == "9:16" and reframed_source and Path(reframed_source).exists():
         clip_mod.cut_clip(reframed_source, start_s, end_s, tmp_cut, reencode=True)
-        vf = f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2"
+        vf = f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2,fps={fps}"
     else:
         clip_mod.cut_clip(source_video, start_s, end_s, tmp_cut, reencode=True)
         if aspect == "9:16":
             vf = (f"crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',"
                   f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase,"
-                  f"crop={target_w}:{target_h}")
+                  f"crop={target_w}:{target_h},fps={fps}")
         else:
             vf = (f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,"
-                  f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
+                  f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black,fps={fps}")
 
     # Stage 2: subtitles + hook + watermark, then final encode.
     filters = [vf]
@@ -139,9 +196,10 @@ def export_clip(
             # We can use filter_complex when extra_inputs present
             filter_chain = ",".join(filters)
             fc = f"[0:v]{filter_chain}[base];[1:v]scale={scale_w}:-1,format=rgba,colorchannelmixer=aa={opacity:.2f}[wm];[base][wm]overlay={ox}:{oy}[outv]"
+            enc_args = ["-c:v", "h264_nvenc", "-preset", "p4", "-tune", "hq", "-rc:v", "vbr", "-cq", "19"] if _nvenc_available() else ["-c:v", "libx264", "-preset", "medium", "-crf", "18"]
             cmd = [ffmpeg(), "-y", "-loglevel", "error", "-i", str(tmp_cut), *extra_inputs,
                    "-filter_complex", fc, "-map", "[outv]", "-map", "0:a?",
-                   "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+                   *enc_args,
                    "-b:v", "10M", "-maxrate", "14M", "-bufsize", "20M",
                    "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "256k",
                    "-movflags", "+faststart", str(output_path)]
@@ -153,9 +211,10 @@ def export_clip(
                 progress_cb(1.0)
             return output_path
 
+    enc_args = ["-c:v", "h264_nvenc", "-preset", "p4", "-tune", "hq", "-rc:v", "vbr", "-cq", "19"] if _nvenc_available() else ["-c:v", "libx264", "-preset", "medium", "-crf", "18"]
     cmd = [ffmpeg(), "-y", "-loglevel", "error", "-i", str(tmp_cut),
            "-vf", ",".join(filters),
-           "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+           *enc_args,
            "-b:v", "10M", "-maxrate", "14M", "-bufsize", "20M",
            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "256k",
            "-movflags", "+faststart", str(output_path)]
@@ -188,6 +247,7 @@ def export_batch(
     *,
     aspect: str = "9:16",
     resolution: str = "1080p",
+    profile: str | None = None,
     reframed_source: str | Path | None = None,
     watermark: dict | None = None,
     progress_cb: Callable[[int, int, str], None] | None = None,
@@ -206,7 +266,7 @@ def export_batch(
             export_clip(
                 c.get("source_video") or c.get("file") or "",
                 c["start_s"], c["end_s"], dest,
-                aspect=aspect, resolution=resolution,
+                aspect=aspect, resolution=resolution, profile=profile,
                 srt_path=c.get("srt_path"), preset=c.get("subtitle_preset", "classic_white"),
                 custom_style=c.get("subtitle_style"), hook_text=c.get("hook", ""),
                 reframed_source=reframed_source,

@@ -1,6 +1,7 @@
 """SRT generation from word timestamps + FFmpeg subtitle burn-in with style presets."""
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from .. import config
@@ -195,10 +196,47 @@ def format_srt_block(index: int, start: float, end: float, text: str) -> str:
     return f"{index}\n{_srt_time(start)} --> {_srt_time(end)}\n{text.strip()}\n"
 
 
+def _is_keyword(word: str) -> bool:
+    """Detect if a token is a high-energy keyword (numbers, symbols, emphasized words)."""
+    clean = re.sub(r"[^\w\s]", "", word).strip()
+    if not clean:
+        return False
+    # Numbers, percentages, currencies, or symbols
+    if any(ch.isdigit() for ch in word) or any(c in word for c in ("$", "%", "!", "?")):
+        return True
+    # Indonesian & English high-impact trigger words
+    triggers = {
+        "jangan", "rahasia", "sukses", "kaya", "cepat", "fakta", "gila", "bahaya",
+        "rugi", "untung", "stop", "viral", "trik", "tips", "penting", "wajib",
+        "hancur", "terbaik", "paling", "modal", "omset", "cuci", "dosa", "mati",
+        "never", "always", "secret", "rich", "fast", "money", "crazy", "stop",
+        "best", "worst", "huge", "insane", "danger", "free", "hack"
+    }
+    return clean.lower() in triggers or (len(clean) >= 6 and clean.isupper())
+
+
+def _format_chunk_keywords(chunk_tokens: list[str], highlight_color_bgr: str = "&H0022FF&") -> str:
+    """Format chunk text highlighting keywords using ASS color tags."""
+    formatted = []
+    for tok in chunk_tokens:
+        clean = tok.strip()
+        if not clean:
+            continue
+        if _is_keyword(clean):
+            # Highlight with contrasting accent (e.g. bright green/yellow)
+            formatted.append(f"{{\\c{highlight_color_bgr}}}{clean}{{\
+}}")
+        else:
+            formatted.append(clean)
+    return " ".join(formatted)
+
+
 def _cues(transcript: dict, clip_start: float, clip_end: float,
           max_chars: int, max_duration: float, time_offset: float = 0.0,
           word_by_word: bool = True, words_per_chunk: int = 1,
-          animation: str = "none") -> list[tuple[float, float, str]]:
+          animation: str = "none",
+          keyword_pop: bool = False,
+          highlight_color: str = "#22c55e") -> list[tuple[float, float, str]]:
     """Word stream inside the clip window -> relative-time cues."""
     words: list[dict] = []
     for seg in transcript.get("segments") or []:
@@ -222,6 +260,7 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
         return []
 
     anim_tag = get_animation_ass_tag(animation)
+    hl_bgr = hex_to_ass_color(highlight_color)
 
     # Word-by-word or N-words per chunk mode (1 to 5 words)
     words_per_chunk = max(1, min(10, int(words_per_chunk or 1)))
@@ -233,10 +272,21 @@ def _cues(transcript: dict, clip_start: float, clip_end: float,
             end = chunk[-1]["end"] - clip_start + time_offset
             if end <= start:
                 end = start + 0.25 * len(chunk)
-            chunk_text = " ".join(w["word"].strip().upper() for w in chunk if w["word"].strip())
-            if chunk_text:
-                full_text = f"{anim_tag}{chunk_text}" if anim_tag else chunk_text
-                cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3), full_text))
+            
+            raw_tokens = [w["word"].strip().upper() for w in chunk if w["word"].strip()]
+            if not raw_tokens:
+                continue
+
+            if keyword_pop and len(raw_tokens) > 1:
+                chunk_text = _format_chunk_keywords(raw_tokens, hl_bgr)
+            elif keyword_pop and len(raw_tokens) == 1 and _is_keyword(raw_tokens[0]):
+                chunk_text = f"{{\\c{hl_bgr}}}{raw_tokens[0]}{{\
+}}"
+            else:
+                chunk_text = " ".join(raw_tokens)
+
+            full_text = f"{anim_tag}{chunk_text}" if anim_tag else chunk_text
+            cues.append((round(max(0.0, start), 3), round(max(0.05, end), 3), full_text))
         return cues
 
     # Sentence / phrase grouping mode fallback
@@ -279,7 +329,9 @@ def generate_srt(transcript: dict, clip_start: float, clip_end: float,
                  time_offset: float = 0.0,
                  word_by_word: bool = True,
                  words_per_chunk: int = 1,
-                 animation: str = "none") -> bool:
+                 animation: str = "none",
+                 keyword_pop: bool = False,
+                 highlight_color: str = "#22c55e") -> bool:
     """
     Write an SRT for the clip window [clip_start, clip_end] with timestamps
     relative to clip_start. Returns False when the window has no words.
@@ -292,7 +344,8 @@ def generate_srt(transcript: dict, clip_start: float, clip_end: float,
     cues = _cues(transcript, float(clip_start), float(clip_end),
                  int(max_chars), float(max_duration), float(time_offset),
                  word_by_word=word_by_word, words_per_chunk=words_per_chunk,
-                 animation=animation)
+                 animation=animation, keyword_pop=keyword_pop,
+                 highlight_color=highlight_color)
     out = Path(output_path)
     if not cues:
         return False

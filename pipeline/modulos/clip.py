@@ -166,8 +166,18 @@ def detect_faces(frame) -> list[tuple[int, int, int, int]]:
         return []
     try:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = cas.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=6, minSize=(60, 60))
-        return [tuple(int(v) for v in f) for f in faces]
+        h, w = frame.shape[:2]
+        min_dim = max(24, int(min(h, w) * 0.08))
+        faces = cas.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(min_dim, min_dim))
+        
+        # Filter overlapping / duplicate detections of the same person
+        rects = []
+        for f in faces:
+            x, y, fw, fh = [int(v) for v in f]
+            # Discard false positives if aspect ratio is distorted
+            if 0.65 <= fw / fh <= 1.5:
+                rects.append((x, y, fw, fh))
+        return rects
     except Exception as e:
         logger.warning("Face detection failed: %s", e)
         return []
@@ -213,6 +223,36 @@ def split_dual_screen(frame, out_w: int, out_h: int, face1, face2):
     return cv2.vconcat([top_img, bot_img])
 
 
+def _nvenc_available() -> bool:
+    """Check if NVIDIA NVENC hardware encoder is available."""
+    try:
+        r = subprocess.run([ffmpeg(), "-f", "lavfi", "-i", "testsrc=duration=1:size=64x64:rate=30",
+                            "-c:v", "h264_nvenc", "-f", "null", "-"],
+                           capture_output=True, timeout=3)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+_HAS_NVENC: bool | None = None
+
+
+def get_video_encoder_args(quality: str = "high") -> list[str]:
+    """Returns optimal encoder flags (NVENC if GPU available, else libx264)."""
+    global _HAS_NVENC
+    if _HAS_NVENC is None:
+        _HAS_NVENC = _nvenc_available()
+
+    if _HAS_NVENC:
+        if quality == "fast":
+            return ["-c:v", "h264_nvenc", "-preset", "p2", "-tune", "ll", "-rc:v", "vbr", "-cq", "22", "-b:v", "6M"]
+        return ["-c:v", "h264_nvenc", "-preset", "p4", "-tune", "hq", "-rc:v", "vbr", "-cq", "19", "-b:v", "10M", "-maxrate", "14M", "-bufsize", "18M"]
+    else:
+        if quality == "fast":
+            return ["-c:v", "libx264", "-preset", "fast", "-crf", "22"]
+        return ["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M"]
+
+
 def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
                         scene_strategy: Callable[[float], str] | None = None,
                         progress_cb: Callable[[float], None] | None = None,
@@ -243,12 +283,13 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
 
     output_video.parent.mkdir(parents=True, exist_ok=True)
     tmp_out = output_video.with_suffix(".tmp.mp4")
+    enc_args = get_video_encoder_args(quality="high")
     cmd = [
         ffmpeg(), "-y", "-loglevel", "error",
         "-f", "rawvideo", "-vcodec", "rawvideo",
         "-s", f"{out_w}x{out_h}", "-pix_fmt", "bgr24", "-r", str(fps),
-        "-i", "-", "-c:v", "libx264", "-preset", "medium", "-crf", "18",
-        "-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M",
+        "-i", "-",
+        *enc_args,
         "-pix_fmt", "yuv420p", "-an", str(tmp_out),
     ]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
@@ -267,11 +308,13 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
             if frame_no % 4 == 0:
                 current_faces = detect_faces(frame)
                 if allow_split_screen and len(current_faces) >= 2:
-                    # Sort faces from left to right
-                    s_faces = sorted(current_faces, key=lambda f: f[0])
-                    # If two prominent distinct faces separated horizontally
-                    if s_faces[1][0] - (s_faces[0][0] + s_faces[0][2]) > vid_w * 0.08:
-                        dual_faces = [s_faces[0], s_faces[1]]
+                    # Sort faces from left to right by horizontal center
+                    s_faces = sorted(current_faces, key=lambda f: f[0] + f[2] / 2)
+                    # Distinct person check: horizontal separation between centers must be > 20% of video width
+                    c1 = s_faces[0][0] + s_faces[0][2] / 2
+                    c2 = s_faces[-1][0] + s_faces[-1][2] / 2
+                    if (c2 - c1) > (vid_w * 0.22):
+                        dual_faces = [s_faces[0], s_faces[-1]]
                         dual_hold_frames = int(fps * 2.0)  # Hold dual screen layout for at least 2 seconds
                     elif dual_hold_frames > 0:
                         dual_hold_frames -= 1
@@ -283,9 +326,19 @@ def reframe_to_vertical(input_video: str | Path, output_video: str | Path,
                     dual_faces = []
 
             # Rendering logic:
+            # ONLY split if 2 faces are truly distinct people widely separated
             if allow_split_screen and dual_faces and len(dual_faces) == 2 and dual_hold_frames > 0:
-                # Scene atas & scene bawah (2 pembicara terpisah / podcast)
-                out = split_dual_screen(frame, out_w, out_h, dual_faces[0], dual_faces[1])
+                c1 = dual_faces[0][0] + dual_faces[0][2] / 2
+                c2 = dual_faces[1][0] + dual_faces[1][2] / 2
+                if (c2 - c1) > (vid_w * 0.22):
+                    out = split_dual_screen(frame, out_w, out_h, dual_faces[0], dual_faces[1])
+                else:
+                    # Single person in frame -> smooth track single person
+                    faces = current_faces if current_faces else detect_faces(frame)
+                    if frame_no % 2 == 0:
+                        cameraman.update_target(tracker.get_target(faces, frame_no, vid_w))
+                    x1, y1, x2, y2 = cameraman.get_crop_box(force_snap=is_scene_start(frame_no, fps, scenes))
+                    out = cv2.resize(frame[y1:y2, x1:x2], (out_w, out_h)) if (x2 > x1 and y2 > y1) else cv2.resize(frame, (out_w, out_h))
             elif mode == "GENERAL":
                 out = blurred_general_frame(frame, out_w, out_h)
                 cameraman.current_center_x = vid_w / 2
@@ -390,8 +443,9 @@ def cut_clip(source: str | Path, start_s: float, end_s: float, output: str | Pat
     output.parent.mkdir(parents=True, exist_ok=True)
     dur = max(0.1, end_s - start_s)
     if reencode:
+        enc_args = get_video_encoder_args(quality="fast")
         cmd = [ffmpeg(), "-y", "-loglevel", "error", "-ss", f"{start_s:.3f}", "-i", str(source),
-               "-t", f"{dur:.3f}", "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+               "-t", f"{dur:.3f}", *enc_args,
                "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(output)]
     else:
         cmd = [ffmpeg(), "-y", "-loglevel", "error", "-ss", f"{start_s:.3f}", "-i", str(source),
@@ -424,8 +478,11 @@ def text_overlay(video_path: str | Path, text: str, output_path: str | Path,
         f"box=1:boxcolor=black@0.55:boxborderw=14:"
         f"x=(w-text_w)/2:y={y_expr}"
     )
+    if not Path(video_path).exists():
+        return output_path
+    enc_args = get_video_encoder_args(quality="fast")
     r = subprocess.run([ffmpeg(), "-y", "-loglevel", "error", "-i", str(video_path),
-                        "-vf", vf, "-c:v", "libx264", "-preset", "fast", "-crf", "20",
+                        "-vf", vf, *enc_args,
                         "-c:a", "copy", str(output_path)], capture_output=True, text=True)
     if r.returncode != 0:
         shutil.copy2(video_path, output_path)

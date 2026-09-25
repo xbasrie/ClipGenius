@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ClipGenius — AI Video Repurposing</title>
+  <title>ClipGenius Studio: Video Repurposing Workstation</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,6 +157,35 @@
         </div>
       </div>
 
+      <!-- Sidebar GPU Hardware Telemetry -->
+      <div class="p-2.5 rounded-lg bg-[#070A12] border border-slate-800/80 text-[11px] space-y-2 mb-2">
+        <div class="flex items-center justify-between text-slate-300 font-semibold pb-1.5 border-b border-slate-800/80">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-emerald-400"></i> GPU Akselerasi
+          </span>
+          <span id="gpu-active-badge" class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">NVENC</span>
+        </div>
+        <div class="space-y-1.5 font-mono text-[10px]">
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Model:</span>
+            <span id="gpu-name" class="text-slate-200 font-semibold truncate max-w-[120px]" title="NVIDIA RTX 2050">RTX 2050</span>
+          </div>
+          <div class="space-y-0.5">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Load: <b id="gpu-load-txt" class="text-emerald-400 font-normal">0%</b></span>
+              <span>Suhu: <b id="gpu-temp-txt" class="text-slate-300 font-normal">0°C</b></span>
+            </div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div id="gpu-load-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-slate-400 pt-0.5">
+            <span>VRAM:</span>
+            <span id="gpu-vram-txt" class="text-slate-200">0 / 4096 MB</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Sidebar Footer (Storage Location) -->
       <div class="border-t border-slate-800/80 pt-2.5">
         <div class="p-2 rounded-lg bg-[#070A12] border border-slate-800/80 text-[10px] text-slate-400 space-y-1.5">
@@ -269,10 +298,10 @@
               </div>
             </div>
 
-            <!-- Group 2: AI & Subtitle -->
+            <!-- Group 2: STT & Subtitle -->
             <div class="bg-[#0B0F19] rounded-xl border border-slate-800/90 p-4 space-y-3.5">
               <div class="flex items-center gap-2 pb-2 border-b border-slate-800 text-xs font-bold uppercase tracking-wider text-slate-300">
-                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i> AI & Transkripsi Subtitle
+                <i data-lucide="mic" class="w-4 h-4 text-emerald-400"></i> Transkripsi Whisper & Subtitle
               </div>
 
               <div>
@@ -307,7 +336,7 @@
             <button type="submit" id="btn-submit"
               class="w-full sm:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg hover:shadow-emerald-900/40 transition-all flex items-center justify-center gap-2 text-sm">
               <i data-lucide="play" class="w-4 h-4 fill-current"></i>
-              Mulai Ekstraksi & Kurasi AI
+              Mulai Proses Video
             </button>
           </div>
         </form>
@@ -366,8 +395,12 @@
             <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-400"></i> Simpan
           </button>
 
-          <button onclick="exportCurrentStudioClip()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Video
+          <button onclick="openExportModal(false)" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i> Export Klip Ini
+          </button>
+
+          <button onclick="openExportModal(true)" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all whitespace-nowrap">
+            <i data-lucide="layers" class="w-3.5 h-3.5"></i> Batch Export Semua
           </button>
         </div>
       </div>
@@ -385,7 +418,7 @@
               <i data-lucide="type" class="w-3.5 h-3.5"></i> Font & Gaya
             </button>
             <button onclick="switchStudioTool('hook')" id="stool-hook" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Hook Header
+              <i data-lucide="heading" class="w-3.5 h-3.5"></i> Hook Header
             </button>
             <button onclick="switchStudioTool('wm')" id="stool-wm" class="stool-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 border border-transparent transition-all flex items-center gap-1.5">
               <i data-lucide="shield" class="w-3.5 h-3.5"></i> Watermark
@@ -414,8 +447,8 @@
                   <button type="button" onclick="setSubOffset(parseFloat(document.getElementById('sub-offset-s').value)+0.5)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded text-[11px] font-mono font-semibold">+0.5s</button>
                 </div>
                 <button type="button" id="btn-retranscribe" onclick="retranscribeCurrentClip()"
-                  class="px-2.5 py-1 bg-indigo-950 hover:bg-indigo-900 border border-indigo-700 text-indigo-300 font-bold rounded text-[11px] flex items-center gap-1 transition-all">
-                  <i data-lucide="sparkles" class="w-3 h-3 text-indigo-400"></i> Sinkron Whisper
+                  class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold rounded text-[11px] flex items-center gap-1 transition-all">
+                  <i data-lucide="refresh-cw" class="w-3 h-3 text-emerald-400"></i> Sinkron Whisper
                 </button>
               </div>
             </div>
@@ -423,7 +456,7 @@
             <!-- Words Transcript Header & List -->
             <div class="flex-1 flex flex-col min-h-0">
               <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Daftar Kata Per-Kata (Editable)</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Daftar Kata Transkrip</span>
                 <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400 border border-slate-700" id="editor-word-count">0 kata</span>
               </div>
               <div id="editor-transcript-list" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-xs">
@@ -607,6 +640,27 @@
                     <span id="sub-glow-label" class="text-[11px] font-mono text-slate-400">Nonaktif</span>
                   </label>
                 </div>
+
+                <!-- Highlight / Keyword Pop Controls -->
+                <div class="pt-2 border-t border-slate-800 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-[11px] font-semibold text-slate-300 block">Keyword Pop (Highlight Kata Kunci)</span>
+                      <span class="text-[9px] text-slate-400">Beri warna aksen otomatis pada kata penting/angka</span>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                      <input type="checkbox" id="sub-keyword-pop" onchange="updateLiveSubtitlePreview()" class="rounded bg-[#0B0F19] border-slate-700 accent-emerald-500 w-4 h-4">
+                      <span id="sub-keyword-pop-label" class="text-[11px] font-mono text-slate-400">Nonaktif</span>
+                    </label>
+                  </div>
+                  <div id="sub-keyword-color-picker" class="flex items-center justify-between pt-1 opacity-40 pointer-events-none transition-opacity">
+                    <span class="text-[10px] text-slate-400">Warna Aksen Kata Kunci</span>
+                    <div class="flex items-center gap-2">
+                      <input type="color" id="sub-highlight-color" value="#22c55e" onchange="updateLiveSubtitlePreview()" class="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer">
+                      <span id="sub-highlight-color-val" class="text-[10px] font-mono text-emerald-400">#22C55E</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -625,11 +679,11 @@
             <div class="space-y-2 pt-2 border-t border-slate-800">
               <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Template Hook Siap Pakai</span>
               <div class="flex flex-wrap gap-1.5">
-                <button type="button" onclick="setHookPreset('JANGAN LAKUKAN INI ❌')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">JANGAN LAKUKAN INI ❌</button>
-                <button type="button" onclick="setHookPreset('RAHASIA SUKSES INI 🤫')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">RAHASIA SUKSES INI 🤫</button>
-                <button type="button" onclick="setHookPreset('STOP SCROLLING DULU ⚠️')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">STOP SCROLLING DULU ⚠️</button>
-                <button type="button" onclick="setHookPreset('FAKTA MENGEJUTKAN 😱')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">FAKTA MENGEJUTKAN 😱</button>
-                <button type="button" onclick="setHookPreset('CARA PALING GAMPANG 💡')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">CARA PALING GAMPANG 💡</button>
+                <button type="button" onclick="setHookPreset('JANGAN LAKUKAN INI')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">JANGAN LAKUKAN INI</button>
+                <button type="button" onclick="setHookPreset('HAL PENTING YANG SERING DILUPAKAN')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">HAL PENTING YANG SERING DILUPAKAN</button>
+                <button type="button" onclick="setHookPreset('PERHATIKAN BAGIAN INI')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">PERHATIKAN BAGIAN INI</button>
+                <button type="button" onclick="setHookPreset('FAKTA MENARIK')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">FAKTA MENARIK</button>
+                <button type="button" onclick="setHookPreset('LANGKAH PRAKTIS')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700">LANGKAH PRAKTIS</button>
               </div>
             </div>
           </div>
@@ -798,6 +852,78 @@
       </div>
     </div>
 
+    <!-- EXPORT MODAL (SINGLE / BATCH) -->
+    <div id="modal-export" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+      <div class="bg-[#111726] rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-800 space-y-5 text-white">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2" id="export-modal-title">
+              <i data-lucide="download" class="w-5 h-5 text-emerald-400"></i> Ekspor Video Klip
+            </h3>
+            <p class="text-xs text-slate-400" id="export-modal-desc">Pilih preset profil platform dan direktori tujuan.</p>
+          </div>
+          <button onclick="closeExportModal()" class="text-slate-400 hover:text-white">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Preset Profil Ekspor -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300 block">Preset Profil Video</label>
+            <div class="grid grid-cols-2 gap-2" id="export-profile-cards">
+              <button type="button" onclick="selectExportProfile('tiktok', this)" class="export-prof-btn active-prof p-3 rounded-xl border border-emerald-500 bg-emerald-950/40 text-left transition-all">
+                <div class="text-xs font-bold text-emerald-400">TikTok / Reels</div>
+                <div class="text-[10px] text-slate-400">9:16 • 1080p • 30 FPS • 8Mbps</div>
+              </button>
+              <button type="button" onclick="selectExportProfile('yt_shorts', this)" class="export-prof-btn p-3 rounded-xl border border-slate-800 bg-[#0B0F19] text-left hover:border-slate-700 transition-all">
+                <div class="text-xs font-bold text-slate-200">YouTube Shorts</div>
+                <div class="text-[10px] text-slate-400">9:16 • 1080p • 60 FPS • 12Mbps</div>
+              </button>
+              <button type="button" onclick="selectExportProfile('landscape_hd', this)" class="export-prof-btn p-3 rounded-xl border border-slate-800 bg-[#0B0F19] text-left hover:border-slate-700 transition-all">
+                <div class="text-xs font-bold text-slate-200">Landscape HD</div>
+                <div class="text-[10px] text-slate-400">16:9 • 1080p • 30 FPS • 10Mbps</div>
+              </button>
+              <button type="button" onclick="selectExportProfile('quick_draft', this)" class="export-prof-btn p-3 rounded-xl border border-slate-800 bg-[#0B0F19] text-left hover:border-slate-700 transition-all">
+                <div class="text-xs font-bold text-slate-200">Quick Draft</div>
+                <div class="text-[10px] text-slate-400">9:16 • 720p • Cepat & Ringan</div>
+              </button>
+            </div>
+            <input type="hidden" id="export-profile-val" value="tiktok">
+          </div>
+
+          <!-- Folder Tujuan Ekspor -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold text-slate-300 block">Folder Output Penyimpanan</label>
+            <div class="flex gap-2">
+              <input type="text" id="export-dir-path" value="C:\Users\elbasrie\Videos\ClipGenius_Export"
+                class="flex-1 bg-[#0B0F19] border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-emerald-500 focus:outline-none transition-colors truncate">
+              <button type="button" onclick="pickExportDir()"
+                class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition-colors shrink-0">
+                <i data-lucide="folder" class="w-4 h-4"></i> Cari
+              </button>
+            </div>
+          </div>
+
+          <!-- Sertakan Watermark -->
+          <div class="p-3 rounded-xl bg-[#0B0F19] border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-semibold text-slate-300 block">Sertakan Watermark / Branding</span>
+              <span class="text-[10px] text-slate-400">Gunakan watermark yang dikonfigurasi di tab Watermark</span>
+            </div>
+            <input type="checkbox" id="export-include-wm" checked class="rounded bg-[#111726] border-slate-700 accent-emerald-500 w-4 h-4 cursor-pointer">
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+          <button onclick="closeExportModal()" class="px-4 py-2 border border-slate-700 text-slate-300 hover:bg-slate-800 rounded-lg text-xs font-semibold">Batal</button>
+          <button onclick="executeExportFromModal()" id="btn-execute-export" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i> Mulai Ekspor
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- TOPIC SELECTION MODAL -->
     <div id="modal-topic-selection" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
       <div class="bg-[#111726] rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-800 space-y-5 text-white">
@@ -806,7 +932,7 @@
             <h3 class="text-base font-bold text-white flex items-center gap-2 font-bold">
               <i data-lucide="check-square" class="w-5 h-5 text-emerald-400"></i> Pilih Topik Video Yang Akan Diclip
             </h3>
-            <p class="text-xs text-slate-400">AI telah menganalisis video dan menemukan kandidat hook/momen terbaik. Centang topik yang ingin dipotong.</p>
+            <p class="text-xs text-slate-400">Analisis video mendeteksi kandidat momen terbaik. Centang segmen yang ingin dipotong.</p>
           </div>
           <button onclick="closeTopicModal()" class="text-slate-400 hover:text-white">
             <i data-lucide="x" class="w-5 h-5"></i>
@@ -1282,7 +1408,29 @@
 
               if (chunkIdx !== currentChunkIndex) {
                 currentChunkIndex = chunkIdx;
-                textSpan.innerText = combinedText;
+
+                // Keyword Pop in Live Player
+                const kwPopEl = document.getElementById('sub-keyword-pop');
+                const isKwPop = kwPopEl ? kwPopEl.checked : false;
+                const hlColor = document.getElementById('sub-highlight-color') ? document.getElementById('sub-highlight-color').value : '#22c55e';
+
+                if (isKwPop) {
+                  const triggers = new Set(["jangan", "rahasia", "sukses", "kaya", "cepat", "fakta", "gila", "bahaya",
+                    "rugi", "untung", "stop", "viral", "trik", "tips", "penting", "wajib", "hancur", "terbaik", "paling",
+                    "modal", "omset", "cuci", "dosa", "mati", "never", "always", "secret", "rich", "fast", "money", "crazy", "free"]);
+                  const htmlTokens = chunkWords.map(w => {
+                    const raw = (w.text || w.word || '').trim().toUpperCase();
+                    const clean = raw.replace(/[^\w]/g, '').toLowerCase();
+                    const isKey = /\d/.test(raw) || /[$%!?]/.test(raw) || triggers.has(clean) || (raw.length >= 6);
+                    if (isKey) {
+                      return `<span style="color: ${hlColor}; font-weight: 900; filter: drop-shadow(0 0 8px ${hlColor});">${raw}</span>`;
+                    }
+                    return raw;
+                  });
+                  textSpan.innerHTML = htmlTokens.join(' ');
+                } else {
+                  textSpan.innerText = combinedText;
+                }
 
                 // Re-trigger CSS animation
                 textSpan.classList.remove('anim-pop', 'anim-bounce', 'anim-fade', 'anim-slide_up');
@@ -1335,6 +1483,14 @@
           if (s.glow !== undefined) {
             const glowEl = document.getElementById('sub-glow-enable');
             if (glowEl) glowEl.checked = !!s.glow;
+          }
+          if (s.keyword_pop !== undefined) {
+            const kwEl = document.getElementById('sub-keyword-pop');
+            if (kwEl) kwEl.checked = !!s.keyword_pop;
+          }
+          if (s.highlight_color) {
+            const hlEl = document.getElementById('sub-highlight-color');
+            if (hlEl) hlEl.value = s.highlight_color;
           }
         } else {
           if (subOffsetEl) subOffsetEl.value = 0.0;
@@ -1610,6 +1766,26 @@
         glowLabel.className = enableGlow ? 'text-[11px] font-mono text-emerald-400 font-bold' : 'text-[11px] font-mono text-slate-400';
       }
 
+      // Keyword Pop Label & Color Picker Toggle
+      const enableKwPop = document.getElementById('sub-keyword-pop') ? document.getElementById('sub-keyword-pop').checked : false;
+      const kwPopLabel = document.getElementById('sub-keyword-pop-label');
+      const kwColorPicker = document.getElementById('sub-keyword-color-picker');
+      const hlColorVal = document.getElementById('sub-highlight-color') ? document.getElementById('sub-highlight-color').value : '#22C55E';
+      const hlColorLabel = document.getElementById('sub-highlight-color-val');
+      if (hlColorLabel) hlColorLabel.innerText = hlColorVal.toUpperCase();
+
+      if (kwPopLabel) {
+        kwPopLabel.textContent = enableKwPop ? 'Aktif' : 'Nonaktif';
+        kwPopLabel.className = enableKwPop ? 'text-[11px] font-mono text-emerald-400 font-bold' : 'text-[11px] font-mono text-slate-400';
+      }
+      if (kwColorPicker) {
+        if (enableKwPop) {
+          kwColorPicker.classList.remove('opacity-40', 'pointer-events-none');
+        } else {
+          kwColorPicker.classList.add('opacity-40', 'pointer-events-none');
+        }
+      }
+
       // Live Subtitle Overlay
       const overlay = document.getElementById('editor-sub-overlay');
       const textSpan = document.getElementById('editor-sub-text');
@@ -1741,7 +1917,9 @@
         offset_s: parseFloat(document.getElementById('sub-offset-s').value || 0),
         words_per_chunk: parseInt(document.getElementById('studio-sub-chunk') ? document.getElementById('studio-sub-chunk').value : 1),
         animation: document.getElementById('studio-sub-anim') ? document.getElementById('studio-sub-anim').value : 'pop',
-        glow: document.getElementById('sub-glow-enable') ? document.getElementById('sub-glow-enable').checked : false
+        glow: document.getElementById('sub-glow-enable') ? document.getElementById('sub-glow-enable').checked : false,
+        keyword_pop: document.getElementById('sub-keyword-pop') ? document.getElementById('sub-keyword-pop').checked : false,
+        highlight_color: document.getElementById('sub-highlight-color') ? document.getElementById('sub-highlight-color').value : '#22c55e'
       };
 
       const wmPayload = {
@@ -1774,42 +1952,129 @@
       }
     }
 
-    async function exportCurrentStudioClip() {
-      if (!activeEditingClip || !studioSelectedJobId) {
-        alert('Pilih klip terlebih dahulu untuk diekspor!');
+    let exportIsBatchMode = false;
+
+    function openExportModal(isBatch = false) {
+      if (!studioSelectedJobId) {
+        alert('Pilih proyek terlebih dahulu!');
         return;
       }
-      const outDir = prompt('Masukkan folder tujuan ekspor di komputer Anda:', 'C:\\Users\\elbasrie\\Videos\\ClipGenius_Export');
-      if (!outDir) return;
+      if (!isBatch && !activeEditingClip) {
+        alert('Pilih salah satu klip untuk diekspor!');
+        return;
+      }
+      exportIsBatchMode = isBatch;
+      const titleEl = document.getElementById('export-modal-title');
+      const descEl = document.getElementById('export-modal-desc');
 
-      const wmPayload = {
-        enabled: document.getElementById('wm-enable') ? document.getElementById('wm-enable').checked : false,
-        type: document.getElementById('wm-type') ? document.getElementById('wm-type').value : 'text',
-        text: document.getElementById('wm-text') ? document.getElementById('wm-text').value : '',
-        image_path: document.getElementById('wm-image-path') ? document.getElementById('wm-image-path').value : '',
-        position: document.getElementById('wm-position') ? document.getElementById('wm-position').value : 'top_right',
-        opacity: document.getElementById('wm-opacity') ? parseFloat(document.getElementById('wm-opacity').value) : 0.8,
-        font_size: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) : 24,
-        width: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) * 6 : 160
-      };
+      if (isBatch) {
+        titleEl.innerHTML = `<i data-lucide="layers" class="w-5 h-5 text-emerald-400"></i> Batch Export Semua Klip`;
+        descEl.innerText = `Mengekspor seluruh klip yang aktif dalam proyek ini ke folder tujuan.`;
+      } else {
+        titleEl.innerHTML = `<i data-lucide="download" class="w-5 h-5 text-emerald-400"></i> Ekspor Klip Terpilih`;
+        descEl.innerText = `Mengekspor klip "${activeEditingClip.title || 'Klip #' + (activeEditingClip.clip_index || 1)}" sesuai preset profil.`;
+      }
+
+      document.getElementById('modal-export').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeExportModal() {
+      document.getElementById('modal-export').classList.add('hidden');
+    }
+
+    function selectExportProfile(profKey, btn) {
+      document.getElementById('export-profile-val').value = profKey;
+      document.querySelectorAll('.export-prof-btn').forEach(b => {
+        b.className = "export-prof-btn p-3 rounded-xl border border-slate-800 bg-[#0B0F19] text-left hover:border-slate-700 transition-all";
+        const title = b.querySelector('div:first-child');
+        if (title) title.className = "text-xs font-bold text-slate-200";
+      });
+      if (btn) {
+        btn.className = "export-prof-btn active-prof p-3 rounded-xl border border-emerald-500 bg-emerald-950/40 text-left transition-all";
+        const title = btn.querySelector('div:first-child');
+        if (title) title.className = "text-xs font-bold text-emerald-400";
+      }
+    }
+
+    async function pickExportDir() {
+      try {
+        const res = await fetch(`${API_BASE}/system/pick-folder`, {
+          method: 'POST',
+          headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: 'Pilih Folder Tujuan Ekspor Video' })
+        });
+        const data = await res.json();
+        if (data.folder_path) {
+          document.getElementById('export-dir-path').value = data.folder_path;
+        }
+      } catch (err) {
+        alert('Gagal memilih folder: ' + err.message);
+      }
+    }
+
+    async function executeExportFromModal() {
+      const outDir = document.getElementById('export-dir-path').value.trim();
+      if (!outDir) {
+        alert('Tentukan folder output ekspor!');
+        return;
+      }
+      const profile = document.getElementById('export-profile-val').value;
+      const includeWm = document.getElementById('export-include-wm').checked;
+
+      let wmPayload = null;
+      if (includeWm) {
+        wmPayload = {
+          enabled: document.getElementById('wm-enable') ? document.getElementById('wm-enable').checked : false,
+          type: document.getElementById('wm-type') ? document.getElementById('wm-type').value : 'text',
+          text: document.getElementById('wm-text') ? document.getElementById('wm-text').value : '',
+          image_path: document.getElementById('wm-image-path') ? document.getElementById('wm-image-path').value : '',
+          position: document.getElementById('wm-position') ? document.getElementById('wm-position').value : 'top_right',
+          opacity: document.getElementById('wm-opacity') ? parseFloat(document.getElementById('wm-opacity').value) : 0.8,
+          font_size: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) : 24,
+          width: document.getElementById('wm-size') ? parseInt(document.getElementById('wm-size').value) * 6 : 160
+        };
+      }
+
+      const btn = document.getElementById('btn-execute-export');
+      const origText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin inline-block mr-1">⟳</span> Mengekspor...`;
 
       try {
+        const payload = {
+          output_dir: outDir,
+          profile: profile,
+          watermark: wmPayload
+        };
+        if (!exportIsBatchMode && activeEditingClip) {
+          payload.clip_ids = [activeEditingClip.id];
+        }
+
         const res = await fetch(`${API_BASE}/jobs/${studioSelectedJobId}/export`, {
           method: 'POST',
           headers: { ...AUTH_HEADER, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            output_dir: outDir,
-            clip_ids: [activeEditingClip.id],
-            aspect: '9:16',
-            resolution: '1080p',
-            watermark: wmPayload
-          })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
-        alert(`Sukses! Klip "${activeEditingClip.title || activeEditingClip.id}" berhasil diekspor ke:\n${outDir}`);
+        closeExportModal();
+
+        if (exportIsBatchMode) {
+          alert(`Batch Export Selesai!\nBerhasil: ${data.exported} klip\nGagal: ${data.failed} klip\n\nTersimpan di:\n${outDir}`);
+        } else {
+          alert(`Ekspor Selesai! Klip berhasil disimpan ke:\n${outDir}`);
+        }
       } catch (err) {
-        alert('Gagal export: ' + err.message);
+        alert('Gagal mengekspor: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origText;
+        lucide.createIcons();
       }
+    }
+
+    async function exportCurrentStudioClip() {
+      openExportModal(false);
     }
 
     function formatSeconds(s) {
@@ -1989,7 +2254,7 @@
         const btn = document.getElementById('btn-submit');
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i> Mulai Ekstraksi & Kurasi AI`;
+          btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i> Mulai Proses Video`;
           lucide.createIcons();
         }
       }
@@ -2375,9 +2640,43 @@
       }
     }
 
+    async function pollGpuStatus() {
+      try {
+        const res = await fetch(API_BASE + '/system/hardware-status', { headers: AUTH_HEADER });
+        if (!res.ok) return;
+        const data = await res.json();
+        const gpu = data.gpu;
+        if (!gpu || !gpu.available) return;
+
+        const nameEl = document.getElementById('gpu-name');
+        if (nameEl) nameEl.textContent = gpu.name.replace('NVIDIA ', '');
+
+        const loadTxt = document.getElementById('gpu-load-txt');
+        if (loadTxt) loadTxt.textContent = gpu.utilization + '%';
+
+        const loadBar = document.getElementById('gpu-load-bar');
+        if (loadBar) {
+          loadBar.style.width = Math.min(100, Math.max(0, gpu.utilization)) + '%';
+          if (gpu.utilization > 80) loadBar.className = 'bg-rose-500 h-full rounded-full transition-all duration-500';
+          else if (gpu.utilization > 40) loadBar.className = 'bg-amber-400 h-full rounded-full transition-all duration-500';
+          else loadBar.className = 'bg-emerald-500 h-full rounded-full transition-all duration-500';
+        }
+
+        const tempTxt = document.getElementById('gpu-temp-txt');
+        if (tempTxt) tempTxt.textContent = gpu.temp_c + '°C';
+
+        const vramTxt = document.getElementById('gpu-vram-txt');
+        if (vramTxt) vramTxt.textContent = `${gpu.vram_used_mb} / ${gpu.vram_total_mb} MB`;
+      } catch (e) {
+        // silent
+      }
+    }
+
     // Init
     checkHealth();
     loadSettings();
+    pollGpuStatus();
+    setInterval(pollGpuStatus, 3000);
     lucide.createIcons();
 
     // Auto-detect active running job on load
